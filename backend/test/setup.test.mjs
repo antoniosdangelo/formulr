@@ -146,10 +146,10 @@ test("the live check is retried while the new Worker warms up, and a persistent 
 });
 
 test("the launchers exist and point at the script", () => {
-  const cmd = readFileSync(new URL("../setup.cmd", import.meta.url), "utf8");
-  assert.match(cmd, /node scripts\\setup\.mjs/);
+  const cmd = readFileSync(new URL("../../setup.cmd", import.meta.url), "utf8");
+  assert.match(cmd, /node backend\\scripts\\setup\.mjs/);
   assert.match(cmd, /winget install -e --id OpenJS\.NodeJS\.LTS/);
-  assert.match(readFileSync(new URL("../setup.sh", import.meta.url), "utf8"), /scripts\/setup\.mjs/);
+  assert.match(readFileSync(new URL("../../setup.sh", import.meta.url), "utf8"), /backend\/scripts\/setup\.mjs/);
 });
 
 test("unattended mode: an access code supplied by the environment is used but never printed, and a short one is refused", async () => {

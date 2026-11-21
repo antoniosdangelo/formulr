@@ -5,12 +5,13 @@ dist/
 *.zip
 
 # Generated from the files in knowledge/ (see knowledge/README.md)
-src/knowledge.data.js
+backend/src/knowledge.data.js
 
 # Your own knowledge packs stay private; only the README and example packs are shared
-knowledge/*
-!knowledge/README.md
-!knowledge/example-*.md
+backend/knowledge/*
+!backend/knowledge/README.md
+!backend/knowledge/example-*.md
 
 # Tests that depend on private knowledge packs
-test/*.private.test.mjs
+backend/test/*.private.test.mjs
+!.dev.vars.example

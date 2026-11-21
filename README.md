@@ -33,10 +33,10 @@ Requirements: a free Cloudflare account, an AI key with a little credit, [Node.j
 The setup is safe to run again. Later: `setup` re-deploys after you change something, `setup --rotate-code` issues a new access code and signs out every device, `setup --reset-key` enters a new AI key. For unattended runs (CI) set `CLOUDFLARE_API_TOKEN` (Workers Scripts Edit and D1 Edit), `CLOUDFLARE_ACCOUNT_ID`, `AIH_API_KEY` and `AIH_APP_PASSWORD` (12 or more characters), then run `node scripts/setup.mjs`.
 
 ## Teach it your own material
-Put notes, formula sheets or a glossary in the `knowledge/` folder and redeploy. They are added to the model's instructions, only for questions that match a pattern you choose. Your files stay private (git ignores them). See [knowledge/README.md](knowledge/README.md).
+Put notes, formula sheets or a glossary in the `backend/knowledge/` folder and redeploy. They are added to the model's instructions, only for questions that match a pattern you choose. Your files stay private (git ignores them). See [backend/knowledge/README.md](backend/knowledge/README.md).
 
 ## Configuration
-Plain variables in `wrangler.jsonc`:
+Plain variables in `backend/wrangler.jsonc`:
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -54,8 +54,8 @@ Excel (add-in: custom functions + side bar)  ->  YOUR Cloudflare Worker  ->  Ant
                                                   applies usage limits,
                                                   holds your AI key
 ```
-- The add-in files in `public/` are static and need no build step.
-- The Worker (`src/`) signs and checks short lived passes, limits usage with a small D1 database, builds the prompt, calls the provider, and returns only the answer and explanation.
+- The add-in files in `frontend/public/` are static and need no build step.
+- The Worker (`backend/src/`) signs and checks short lived passes, limits usage with a small D1 database, builds the prompt, calls the provider, and returns only the answer and explanation.
 - Long input is sent as written (up to 500,000 characters). A range is sent with line breaks between rows and tabs between cells.
 - If an answer's explanation contradicts the answer, the Worker asks once more in careful mode and returns the clean result.
 
@@ -72,18 +72,28 @@ Excel (add-in: custom functions + side bar)  ->  YOUR Cloudflare Worker  ->  Ant
 - Tested by the author in Excel on the web with Claude. The automated tests cover the Worker, the add-in logic against a simulated Excel, the manifest and the setup script. Desktop Excel, Mac and Gemini are less tested. Reports and fixes are welcome.
 
 ## Development
+Everything runs from the `backend/` folder:
 ```
-npm test          # Node.js 22 or newer, nothing to install
-npm run knowledge # rebuild src/knowledge.data.js from knowledge/
+cd backend
+npm test           # Node.js 22 or newer, nothing to install
+npm run knowledge  # rebuild src/knowledge.data.js from knowledge/
+npx wrangler dev   # run the Worker and the add-in on your laptop (http://localhost:8787)
+npm run deploy     # publish (only from main, after Antonio's typed "deploy")
 ```
 Layout:
 ```
-src/        Worker: routes and auth (worker.js), prompts and validation (core.js), manifest, knowledge loader
-public/     Add-in: custom functions, side bar, install page, headers
-scripts/    setup.mjs (one command deploy), smoke.mjs (live checks), build-knowledge.mjs
-knowledge/  Your private reference material (git ignores everything except the README and examples)
-test/       node:test suites
+frontend/public/   Add-in: custom functions, side bar, install page, headers (no build step)
+backend/src/       Worker: routes and auth (worker.js), prompts and validation (core.js), manifest, knowledge loader
+backend/scripts/   setup.mjs (one command deploy), smoke.mjs (live checks), build-knowledge.mjs
+backend/knowledge/ Your private reference material (git ignores everything except the README and examples)
+backend/test/      node:test suites
+setup.cmd, setup.sh, reset-key.cmd   one click launchers, kept at the top so users find them
 ```
+Branches: `main` is the working version, new work goes to `sandbox` first. See [BRANCHING.md](BRANCHING.md).
+Turn on the safety hooks once per clone: `git config core.hooksPath .githooks`
+Settings for local runs go in `backend/.dev.vars` (never committed), see `backend/.dev.vars.example`.
+
+Known test failures (also before the folder move, 2 of 161): "the D1 block can be read and rewritten" and "running again changes nothing" in `test/setup.test.mjs`.
 
 ## License and notices
 MIT. See [LICENSE](LICENSE).

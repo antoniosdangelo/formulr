@@ -7,7 +7,7 @@ test("association is retried until Excel's CustomFunctions object appears", asyn
   setTimeout(() => {
     globalThis.CustomFunctions = { associate: (id) => seen.push(id), Error: class {}, ErrorCode: {} };
   }, 250);
-  await import("../public/functions.js");
+  await import("../../frontend/public/functions.js");
   const AI = globalThis.AIHelper;
   assert.equal(AI.associated, undefined, "not registered yet, Excel's object is not there");
   await new Promise((r) => setTimeout(r, 700));

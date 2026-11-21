@@ -87,8 +87,8 @@ Alternatively you can share your address and access code with someone you trust.
 | Update after changing something | Run the setup again |
 | Get a new access code (signs out every device) | `setup --rotate-code` (Windows: `setup.cmd --rotate-code`) |
 | Use a different AI key | `setup --reset-key` |
-| Switch Claude model | Edit `ANTHROPIC_MODEL` in `wrangler.jsonc` (lowercase name), then run the setup |
-| Limit spending further | Lower `AI_PER_DAY` in `wrangler.jsonc`, then run the setup |
+| Switch Claude model | Edit `ANTHROPIC_MODEL` in `backend/wrangler.jsonc` (lowercase name), then run the setup |
+| Limit spending further | Lower `AI_PER_DAY` in `backend/wrangler.jsonc`, then run the setup |
 | Teach it my own material | Add a file to `knowledge/` (see `knowledge/README.md`), then run the setup |
 | Remove everything | Delete the Worker and the D1 database in the Cloudflare dashboard, and remove the add-in in Excel |
 

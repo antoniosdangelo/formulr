@@ -1,0 +1,27 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/office-js/custom-functions.schema.json",
+  "allowCustomDataForDataTypeAny": false,
+  "functions": [
+    {
+      "id": "ANSWER",
+      "name": "ANSWER",
+      "parameters": [
+        {
+          "name": "q",
+          "type": "any",
+          "dimensionality": "matrix"
+        },
+        {
+          "name": "extra",
+          "type": "string",
+          "dimensionality": "scalar",
+          "optional": true
+        }
+      ],
+      "result": {
+        "type": "string",
+        "dimensionality": "scalar"
+      }
+    }
+  ]
+}

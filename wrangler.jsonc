@@ -1,0 +1,24 @@
+{
+  "name": "excel-ai-helper",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "run_worker_first": ["/api/*", "/manifest.xml", "/health", "/install", "/install/", "/download"]
+  },
+  "vars": {
+    "GEMINI_MODEL": "gemini-2.5-flash",
+    "ANTHROPIC_MODEL": "claude-sonnet-5-5",
+    "CALC_TOOLS": "on",
+    "ANTHROPIC_MODEL_CAREFUL": "claude-sonnet-5-5"
+  },
+  // Secrets (ANTHROPIC_API_KEY or GEMINI_API_KEY, and APP_PASSWORD) are set by scripts/setup.mjs, never stored in this file.
+  // BEGIN D1 (managed by scripts/setup.mjs; shared usage limits across Worker instances)
+  "d1_databases": [
+    { "binding": "QUOTAS_DB", "database_name": "excel-ai-helper-quotas", "database_id": "00000000-0000-0000-0000-000000000000" }
+  ]
+  // END D1
+}

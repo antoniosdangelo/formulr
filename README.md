@@ -20,6 +20,7 @@ The side bar also has buttons that answer selected cells without a formula, read
 ## Live links
 - Antonio's Worker: https://excel-ai-helper.comprsly-antonio.workers.dev (health check: `/health`)
 - Code: https://github.com/antoniosdangelo/formulr (private)
+- The live Worker keeps the name `excel-ai-helper` so its address never changes. Every update is explained in `CHANGELOG.md`.
 
 ## How you use it, in short
 Everything runs in **your own** accounts. There is no shared server and no shared AI key, so nobody else pays for your usage and nobody else sees your questions.

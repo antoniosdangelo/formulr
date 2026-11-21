@@ -18,7 +18,7 @@
   // Secrets (ANTHROPIC_API_KEY or GEMINI_API_KEY, and APP_PASSWORD) are set by scripts/setup.mjs, never stored in this file.
   // BEGIN D1 (managed by scripts/setup.mjs; shared usage limits across Worker instances)
   "d1_databases": [
-    { "binding": "QUOTAS_DB", "database_name": "excel-ai-helper-quotas", "database_id": "2f28692f-25d1-48f0-86eb-54a7e7e7e77e" }
+    { "binding": "QUOTAS_DB", "database_name": "excel-ai-helper-quotas", "database_id": "00000000-0000-0000-0000-000000000000" }
   ]
   // END D1
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-await import("../../public/functions.js");
+await import("../../frontend/public/functions.js");
 const AI = globalThis.AIHelper;
 AI.base = "https://helper.test";
 AI.retryDelaysMs = [];
@@ -13,8 +13,8 @@ globalThis.Office = {
   addin: { showAsTaskpane: async () => {} },
   onReady() {},
 };
-await import("../../public/app.js");
-await import("../../public/selftest.js");
+await import("../../frontend/public/app.js");
+await import("../../frontend/public/selftest.js");
 
 // ---------- a small in-memory Excel: grid, formulas that call the real AI.* functions, spills, pictures, sheets ----------
 

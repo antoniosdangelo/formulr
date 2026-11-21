@@ -1,0 +1,11 @@
+# Formulr local settings. Copy to .dev.vars and fill in. Never commit .dev.vars.
+# The live values are stored in Cloudflare by setup.cmd or reset-key.cmd.
+
+# Access code a user types into the Excel side bar. Requests without it are refused.
+APP_PASSWORD=
+# Your Anthropic key (set a monthly spending limit on it).
+ANTHROPIC_API_KEY=
+# Your Google Gemini key, only if you use Gemini.
+GEMINI_API_KEY=
+# Optional. Your own add-in id (a GUID).
+ADDIN_ID=

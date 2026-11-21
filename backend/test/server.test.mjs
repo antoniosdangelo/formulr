@@ -554,7 +554,7 @@ test("every AI reply says how long the worker steps and the AI call took", async
 
 test("/install serves the one minute install page, and the page points at the manifest and the formula", async () => {
   const fs = await import("node:fs");
-  const html = fs.readFileSync(new URL("../public/install.html", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../../public/install.html", import.meta.url), "utf8");
   const env = { ...freshEnv(), ASSETS: { fetch: async (req) => (new URL(req.url).pathname === "/install.html" ? new Response(html, { headers: { "content-type": "text/html" } }) : new Response("no", { status: 404 })) } };
   for (const path of ["/install", "/install/"]) {
     const res = await worker.fetch(new Request(ORIGIN + path), env);

@@ -91,7 +91,7 @@ cd backend
 npm test           # Node.js 22 or newer, nothing to install
 npm run knowledge  # rebuild src/knowledge.data.js from knowledge/
 npx wrangler dev   # run the Worker and the add-in on your laptop (http://localhost:8787)
-npm run deploy     # publish (only from main, after Antonio's typed "deploy")
+setup.cmd          # publish from the top folder: links YOUR database, then deploys (only from main, after Antonio's typed "deploy")
 ```
 Layout:
 ```
@@ -106,7 +106,6 @@ Branches: `main` is the working version, new work goes to `sandbox` first. See [
 Turn on the safety hooks once per clone: `git config core.hooksPath .githooks`
 Settings for local runs go in `backend/.dev.vars` (never committed), see `backend/.dev.vars.example`.
 
-Known test failures (also before the folder move, 2 of 161): "the D1 block can be read and rewritten" and "running again changes nothing" in `test/setup.test.mjs`.
 
 ## License and notices
 MIT. See [LICENSE](LICENSE).

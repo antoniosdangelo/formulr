@@ -17,6 +17,10 @@ The answer fills that cell and a short explanation fills the one beside it. Noth
 
 The side bar also has buttons that answer selected cells without a formula, read a picture (select the cell under its top left corner) into cells, and **Tidy** and **Expand** buttons on the Excel ribbon (Home tab, Formulr group). They keep long question cells to one line and bring the full text back; they only change how cells look, never what is in them, and nothing happens automatically.
 
+## Live links
+- Antonio's Worker: https://excel-ai-helper.comprsly-antonio.workers.dev (health check: `/health`)
+- Code: https://github.com/antoniosdangelo/formulr (private)
+
 ## How you use it, in short
 Everything runs in **your own** accounts. There is no shared server and no shared AI key, so nobody else pays for your usage and nobody else sees your questions.
 

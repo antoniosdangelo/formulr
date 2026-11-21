@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 // functions.js and app.js attach to globalThis, as they do inside Excel's shared runtime.
-await import("../../public/functions.js");
+await import("../../frontend/public/functions.js");
 const AI = globalThis.AIHelper;
 AI.base = "https://helper.test";
 AI.retryDelaysMs = [];
@@ -16,7 +16,7 @@ globalThis.Office = {
   addin: { showAsTaskpane: async () => void officeCalls.shown++ },
   onReady: () => {},
 };
-await import("../../public/app.js");
+await import("../../frontend/public/app.js");
 
 const unlocked = () => AI.setToken("tok", 3600);
 const reset = () => {
@@ -696,7 +696,7 @@ test("a dropped connection or a 502 is retried quietly before the cell shows an 
 
 test("the side bar offers the install file and a copy link button that really copies", async () => {
   const fs = await import("node:fs");
-  const html = fs.readFileSync(new URL("../../public/taskpane.html", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../../frontend/public/taskpane.html", import.meta.url), "utf8");
   assert.match(html, /<a class="button" id="dl-manifest" href="download"/);
   assert.match(html, /id="copy-link"/);
   const copied = [];
@@ -724,11 +724,11 @@ test("copying falls back to false when neither the clipboard nor the document is
 test("the pane loads Office.js from Microsoft, with a second address if the first is blocked", async () => {
   const fs = await import("node:fs");
   const vm = await import("node:vm");
-  const html = fs.readFileSync(new URL("../../public/taskpane.html", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../../frontend/public/taskpane.html", import.meta.url), "utf8");
   const head = html.slice(html.indexOf("<head>"), html.indexOf("</head>"));
   assert.ok(head.indexOf("officeapis.public.onecdn.static.microsoft/1/office.js") < head.indexOf("office-fallback.js"), "fallback runs right after the first tag");
   assert.ok(html.indexOf("office-fallback.js") < html.indexOf('src="functions.js"'), "before any of our own scripts");
-  const src = fs.readFileSync(new URL("../../public/office-fallback.js", import.meta.url), "utf8");
+  const src = fs.readFileSync(new URL("../../frontend/public/office-fallback.js", import.meta.url), "utf8");
   const run = (win) => vm.runInNewContext(src, win);
   const written = [];
   const blocked = { document: { write: (t) => written.push(t) } };
@@ -807,7 +807,7 @@ test("Tidy view keeps questions to one line and Expand brings the full text back
   await assert.rejects(AI.app.runCompact(true), /Select fewer cells/);
   assert.ok(!calls.some((c) => c[0] === "VALUES WRITTEN"));
   const fs = await import("node:fs");
-  const html = fs.readFileSync(new URL("../../public/taskpane.html", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../../frontend/public/taskpane.html", import.meta.url), "utf8");
   assert.match(html, /FORMULR\.ANSWER\(B2\)/);
 });
 

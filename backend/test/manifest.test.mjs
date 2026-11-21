@@ -58,8 +58,8 @@ test("the manifest is served for whatever origin it is requested from, and escap
 });
 
 test("function metadata, code and manifest agree", () => {
-  const meta = JSON.parse(read("../public/functions.json"));
-  const code = read("../public/functions.js");
+  const meta = JSON.parse(read("../../frontend/public/functions.json"));
+  const code = read("../../frontend/public/functions.js");
   for (const fn of meta.functions) {
     assert.ok(code.includes(`CustomFunctions.associate("${fn.id}"`), "no associate() for " + fn.id);
     assert.ok(fn.parameters.length > 0 && !fn.description, "no description: it only adds a pop up under the formula");
@@ -70,7 +70,7 @@ test("function metadata, code and manifest agree", () => {
     }
   }
   assert.deepEqual(meta.functions.map((f) => f.id), ["ANSWER"]);
-  const appJs = read("../public/app.js");
+  const appJs = read("../../frontend/public/app.js");
   for (const name of [...xml.matchAll(/<FunctionName>(\w+)<\/FunctionName>/g)].map((m) => m[1])) {
     assert.ok(appJs.includes(`Office.actions.associate("${name}"`), "ribbon action without a registered handler: " + name);
   }
@@ -78,7 +78,7 @@ test("function metadata, code and manifest agree", () => {
 });
 
 test("task pane follows Microsoft's loading rules and has no inline script", () => {
-  const html = read("../public/taskpane.html");
+  const html = read("../../frontend/public/taskpane.html");
   const head = html.slice(html.indexOf("<head>"), html.indexOf("</head>"));
   assert.ok(head.includes("https://officeapis.public.onecdn.static.microsoft/1/office.js"), "official CDN in <head>");
   assert.ok(head.indexOf("office.js") < head.indexOf("styles.css"));
@@ -90,7 +90,7 @@ test("task pane follows Microsoft's loading rules and has no inline script", () 
 });
 
 test("security headers allow Excel on the web to frame the pane and nothing else", () => {
-  const headers = read("../public/_headers");
+  const headers = read("../../frontend/public/_headers");
   const fa = headers.match(/frame-ancestors ([^\n]+)/)[1];
   for (const host of ["*.office.com", "*.officeapps.live.com", "*.cloud.microsoft", "*.microsoft.com"]) assert.ok(fa.includes("https://" + host), host);
   assert.ok(!/frame-ancestors[^\n]*(\*\s|\s\*$|http:)/.test(headers), "no wildcard or plain http parents");
@@ -102,7 +102,7 @@ test("security headers allow Excel on the web to frame the pane and nothing else
 });
 
 test("secrets never appear in source or config", () => {
-  for (const f of ["../src/worker.js", "../src/core.js", "../wrangler.jsonc", "../public/app.js", "../public/functions.js"]) {
+  for (const f of ["../src/worker.js", "../src/core.js", "../wrangler.jsonc", "../../frontend/public/app.js", "../../frontend/public/functions.js"]) {
     const t = read(f);
     assert.doesNotMatch(t, /AIza[0-9A-Za-z_-]{20,}/, f + " contains something shaped like a Google key");
   }
@@ -114,12 +114,12 @@ test("every URL in the manifest maps to a real file, and HTML is served without 
   for (const m of xml.matchAll(/DefaultValue="(https:\/\/helper\.test)(\/[^"]*)"/g)) {
     const path = m[2];
     if (path === "/manifest.xml") continue;
-    assert.ok(existsSync(new URL("../public" + path, import.meta.url)), "manifest points at a missing file: " + path);
+    assert.ok(existsSync(new URL("../../frontend/public" + path, import.meta.url)), "manifest points at a missing file: " + path);
   }
 });
 
 test("the function metadata and script are readable cross origin, as Excel on the web fetches them from its own origin", () => {
-  const headers = read("../public/_headers");
+  const headers = read("../../frontend/public/_headers");
   for (const file of ["/functions.json", "/functions.js"]) {
     const block = headers.split(/\n(?=\/)/).find((b) => b.startsWith(file));
     assert.ok(block && /Access-Control-Allow-Origin: \*/.test(block), file + " needs Access-Control-Allow-Origin");

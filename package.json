@@ -1,0 +1,15 @@
+{
+  "name": "excel-ai-helper",
+  "version": "0.1.0",
+  "description": "Formulr: AI formulas for Excel (=FORMULR.ANSWER(B2)) on your own Cloudflare Worker, with your own AI key.",
+  "license": "MIT",
+  "author": "Antonio D'Angelo",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "knowledge": "node scripts/build-knowledge.mjs",
+    "pretest": "node scripts/build-knowledge.mjs",
+    "test": "node --test --test-reporter=spec \"test/*.test.mjs\"",
+    "deploy": "node scripts/build-knowledge.mjs && wrangler deploy"
+  }
+}

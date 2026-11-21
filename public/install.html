@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Install Formulr</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="install">
+      <h1>Install Formulr in one minute</h1>
+      <p class="hint">Works in Excel on the web and in desktop Excel, with any Microsoft account. You need the access code from whoever runs this service.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Download the file.</strong>
+          <p><a class="button" href="download">Download formulr-manifest.xml</a></p>
+        </li>
+        <li>
+          <strong>Open Excel</strong> (<a href="https://excel.cloud.microsoft/" target="_blank" rel="noopener">Excel on the web</a> or the desktop app) and open any workbook.
+        </li>
+        <li>
+          <strong>Add it.</strong> Go to <em>Insert</em>, then <em>Add-ins</em>, then <em>More Add-ins</em>, then <em>My Add-ins</em>, then <em>Manage My Add-ins</em>, then <em>Upload My Add-in</em>. Choose the file you just downloaded.
+        </li>
+        <li>
+          <strong>Unlock it.</strong> On the <em>Home</em> tab click <em>Formulr</em>, enter the access code once, and leave "Remember on this device" ticked.
+        </li>
+        <li>
+          <strong>Try it.</strong> Type a question in B2, then in C2 type <code>=FORMULR.ANSWER(B2)</code>. The answer fills C2 and a short explanation fills D2. Keep C2 and D2 empty first.
+        </li>
+      </ol>
+
+      <h2>If something looks wrong</h2>
+      <ul>
+        <li>Remove any older Formulr, AI Helper or Excel AI Helper entries in <em>Manage My Add-ins</em>, reload the page, and upload the file again.</li>
+        <li>If you see <code>#NAME?</code>, wait a minute, reload the page, or reopen the workbook.</li>
+        <li>In the Formulr pane press <em>Run checks</em>, then <em>Copy</em>, and send the report to whoever runs this service. It never includes your access code.</li>
+        <li>Uploaded add-ins are remembered per browser. On another laptop or browser, repeat these steps.</li>
+      </ul>
+      <p class="hint">Content you send is processed by Anthropic (Claude). Do not use confidential company data until you have approval to.</p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Formulr</title>
+    <script type="text/javascript" src="https://officeapis.public.onecdn.static.microsoft/1/office.js"></script>
+    <script src="office-fallback.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Formulr <span id="lock-state" class="badge off">Locked</span></h1>
+      <p id="banner" class="banner" role="alert" hidden></p>
+      <p id="status" role="status" aria-live="polite">Starting...</p>
+
+      <section>
+        <label for="code">Access code</label>
+        <div class="row">
+          <input id="code" type="password" autocomplete="off" spellcheck="false" />
+          <button id="unlock" type="button">Unlock</button>
+        </div>
+        <label class="inline"><input id="remember" type="checkbox" checked /> Remember on this device for 30 days</label>
+        <p class="hint">Only a signed, expiring pass is kept on this device, never the code itself. Untick it on a shared computer, or press Lock to forget it.</p>
+        <p class="hint" id="lock-note"></p>
+        <button id="lock" type="button" class="secondary">Lock</button>
+      </section>
+
+      <section>
+        <h2>Formula</h2>
+        <p>Type <code>=FORMULR.ANSWER(B2)</code> in the cell next to a question. You get just the answer in that one cell. For multiple choice it always picks one option, the closest if none match exactly.</p>
+        <p class="hint">Add text after it for an instruction, like <code>=FORMULR.ANSWER(B2, "in Spanish")</code>. A range such as <code>B2:F9</code> works for a pasted block.</p>
+      </section>
+
+      <section>
+        <h2>Picture</h2>
+        <p class="hint">Place the picture over the cells, click it, then press Answer picture on the Home ribbon (or below). The answer appears just right of the picture. It answers only the picture you click, one at a time. A picture inside a cell cannot be read by Excel's add-in tools: copy it (Ctrl+C) and paste it in the box below instead.</p>
+        <label for="instruction">Instruction (optional)</label>
+        <input id="instruction" type="text" maxlength="500" placeholder="For example: answer in one word" />
+        <button id="run-answer" type="button">Answer picture</button>
+        <label for="paste-zone">Or paste a picture here</label>
+        <div id="paste-zone" class="paste-zone" contenteditable="true" tabindex="0" role="textbox" aria-label="Paste a picture here">Select the cell for the answer, copy the picture (a screenshot, or a picture in a cell), click here and press Ctrl+V. The answer goes in the cell just right of the selected cell.</div>
+      </section>
+
+      <section>
+        <h2>Add Formulr to another laptop</h2>
+        <p class="hint">Download the install file, then in Excel go to Insert, Add-ins, Manage My Add-ins, Upload My Add-in. Or send the install link, which has every step.</p>
+        <div class="row">
+          <a class="button" id="dl-manifest" href="download" target="_blank" rel="noopener">Download install file</a>
+          <button id="copy-link" type="button" class="secondary">Copy install link</button>
+        </div>
+        <p class="hint" id="install-link"></p>
+      </section>
+
+      <section>
+        <h2>Checks</h2>
+        <p class="hint">If something does not work, run these and paste the report to whoever is helping you. It never includes your access code.</p>
+        <div class="row">
+          <button id="run-checks" type="button" class="secondary">Run checks</button>
+          <button id="test-ai" type="button" class="secondary">Test the AI (1 call)</button>
+          <button id="copy-report" type="button" class="secondary">Copy</button>
+        </div>
+        <div class="row">
+          <button id="run-selftest" type="button" class="secondary">Run full self-test (6 AI calls)</button>
+          <button id="speed-test" type="button" class="secondary">Speed test</button>
+        </div>
+        <p class="hint">The self-test adds a temporary sheet, tries every formula and both picture buttons, shows what passed, then deletes the sheet.</p>
+        <pre id="report" aria-live="polite"></pre>
+      </section>
+
+      <p class="hint">Content you send is processed by Anthropic (Claude). Do not use confidential company data until you have approval to.</p>
+    </main>
+    <script src="functions.js"></script>
+    <script src="app.js"></script>
+    <script src="selftest.js"></script>
+  </body>
+</html>

@@ -17,10 +17,18 @@ The answer fills that cell and a short explanation fills the one beside it. Noth
 
 The side bar also has buttons that answer selected cells without a formula, read a picture (select the cell under its top left corner) into cells, and **Tidy** and **Expand** buttons on the Excel ribbon (Home tab, Formulr group). They keep long question cells to one line and bring the full text back; they only change how cells look, never what is in them, and nothing happens automatically.
 
-## Live links
-- Antonio's Worker: https://excel-ai-helper.comprsly-antonio.workers.dev (health check: `/health`)
-- Code: https://github.com/antoniosdangelo/formulr (private)
-- The live Worker keeps the name `excel-ai-helper` so its address never changes. Every update is explained in `CHANGELOG.md`.
+## Bring your own AI key (required)
+Formulr never uses anyone else's AI key, and there is no shared Formulr server. Each person deploys their **own** copy to their own free Cloudflare account and pastes their **own** key. Your questions and your bill stay with you.
+
+| Provider | Supported | Where to get a key |
+|---|---|---|
+| Anthropic (Claude) | Yes, the default | https://console.anthropic.com/settings/keys |
+| Google Gemini | Yes, used only if you give a Gemini key and no Anthropic key | https://aistudio.google.com/apikey |
+| Others (OpenAI and so on) | Not yet | |
+
+Set a monthly spending limit with your provider before you start. Your copy is also protected by an access code that setup creates for you, so only people you give it to can use your key.
+
+Every update is explained in `CHANGELOG.md`. The Worker is named `excel-ai-helper` inside your Cloudflare account; that name is part of the setup and is kept as is.
 
 ## How you use it, in short
 Everything runs in **your own** accounts. There is no shared server and no shared AI key, so nobody else pays for your usage and nobody else sees your questions.

@@ -11,5 +11,8 @@ Every update to this repo, oldest first, in plain words. The short code is the c
 - Naming and descriptions: package renamed `formulr` and this change log added.
 - README now opens with a "Bring your own AI key" section: Formulr never uses anyone else's key, each person deploys their own copy with their own Anthropic or Gemini key. Antonio's own Worker address was removed from the README and the GitHub homepage, so nobody is pointed at his key. The live Worker keeps the name `excel-ai-helper`, because changing it would change the live address and break installed add-ins, and the name is also built into the usage database and the sign in token.
 
+## November 21, 2026: fix (branch `backend/ship-placeholder-db-id`)
+- The first upload carried Antonio's own Cloudflare database id in `backend/wrangler.jsonc`. The repo must ship the blank placeholder id, because each user's setup links their own database. This was the cause of the 2 "known" setup test failures. With the placeholder, all tests pass. The README now says to publish with `setup.cmd`, which links the right database before deploying.
+
 ## How updates work from now on
 New work goes to `sandbox` first, gets tested, and only then is merged into `main` (production) when Antonio approves. See `BRANCHING.md`.

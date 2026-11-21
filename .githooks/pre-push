@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Botlien pre-push guard. Stops a push straight to main.
+# main only changes by a merge from sandbox that Antonio decided on.
+# To allow one push on purpose:  ALLOW_MAIN_PUSH=1 git push
+protected="refs/heads/main"
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "$protected" ] && [ "${ALLOW_MAIN_PUSH:-0}" != "1" ]; then
+    echo "BLOCKED: direct push to main. Push to sandbox (or a frontend/ or backend/ branch) instead."
+    echo "Only Antonio decides what goes into main. See BRANCHING.md."
+    exit 1
+  fi
+done
+exit 0

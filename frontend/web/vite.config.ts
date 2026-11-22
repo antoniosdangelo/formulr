@@ -1,11 +1,13 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 // The page builds straight into ../public next to the add-in files, which it must never delete.
 // File names have no hashes so a rebuild of the same source gives the same files (CI checks this).
 // The second, server side build only renders the page to HTML at build time and is thrown away after.
 export default defineConfig(({ isSsrBuild }) => ({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  resolve: { alias: { "@": "/src" } },
   base: "/",
   build: isSsrBuild
     ? { outDir: ".ssr", emptyOutDir: true }

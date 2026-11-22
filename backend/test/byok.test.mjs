@@ -212,3 +212,80 @@ test("health never reports a key and a guest-only Worker with no key of its own 
     assert.equal(calls.length, 0);
   });
 });
+
+// ---------- no access code needed with your own key ----------
+
+test("a guest with their own key and no access code gets answers, on their key only", async () => {
+  const env = envWith();
+  await watch(claudeOk, async (calls) => {
+    const res = await ask(env, { "x-formulr-provider": "anthropic", "x-formulr-key": USER_AKEY });
+    assert.equal(res.status, 200);
+    assert.deepEqual([...new Set(sentKeys(calls))], [USER_AKEY]);
+  });
+});
+
+test("no access code and no key gets add your key, and nothing is called", async () => {
+  const env = envWith();
+  await watch(claudeOk, async (calls) => {
+    const res = await ask(env, {});
+    assert.equal(res.status, 403);
+    assert.equal((await res.json()).error, "needs_key");
+    assert.equal(calls.length, 0);
+  });
+});
+
+test("a broken pass with no key asks to sign in again; with a key it still works as a guest", async () => {
+  const env = envWith();
+  await watch(claudeOk, async (calls) => {
+    assert.equal((await ask(env, { authorization: "Bearer not-a-real-pass" })).status, 401);
+    assert.equal(calls.length, 0);
+    const res = await ask(env, { authorization: "Bearer not-a-real-pass", "x-formulr-key": USER_AKEY });
+    assert.equal(res.status, 200);
+    assert.deepEqual([...new Set(sentKeys(calls))], [USER_AKEY]);
+  });
+});
+
+test("a forged owner pass never reaches the Worker's key", async () => {
+  const env = envWith();
+  await watch(claudeOk, async (calls) => {
+    const forged = { authorization: "Bearer " + (await signToken("some-other-owner-code")) };
+    assert.equal((await ask(env, forged)).status, 401);
+    assert.equal((await ask(env, { ...forged, "x-formulr-key": USER_AKEY })).status, 200);
+    assert.ok(!sentKeys(calls).includes(SERVER_AKEY));
+  });
+});
+
+test("each guest key has its own limit, so one key cannot use up another's", async () => {
+  const env = envWith({ GUEST_PER_MINUTE: "2" });
+  const other = "sk-ant-OTHER" + "o".repeat(30);
+  await watch(claudeOk, async () => {
+    const mine = { "x-formulr-key": USER_AKEY };
+    // Requests in one test share an address, so give each its own to isolate the per key limit.
+    assert.equal((await ask(env, { ...mine, "cf-connecting-ip": "192.0.2.1" })).status, 200);
+    assert.equal((await ask(env, { ...mine, "cf-connecting-ip": "192.0.2.2" })).status, 200);
+    assert.equal((await ask(env, { ...mine, "cf-connecting-ip": "192.0.2.3" })).status, 429);
+    assert.equal((await ask(env, { "x-formulr-key": other, "cf-connecting-ip": "192.0.2.4" })).status, 200);
+  });
+});
+
+test("each address has its own limit, even when it rotates keys", async () => {
+  const env = envWith({ GUEST_PER_MINUTE: "2" });
+  await watch(claudeOk, async () => {
+    const at = { "cf-connecting-ip": "192.0.2.50" };
+    const key = (n) => ({ ...at, "x-formulr-key": "sk-ant-ROT" + String(n).repeat(30) });
+    assert.equal((await ask(env, key(1))).status, 200);
+    assert.equal((await ask(env, key(2))).status, 200);
+    assert.equal((await ask(env, key(3))).status, 429);
+  });
+});
+
+test("the limit tags in the database never contain the key", async () => {
+  const env = envWith();
+  await watch(claudeOk, async () => {
+    await ask(env, { "x-formulr-key": USER_AKEY });
+  });
+  const seen = env.QUOTAS_DB.seen.join("\n");
+  assert.ok(seen.includes("gk:m:"), "a per key limit was recorded");
+  assert.ok(!seen.includes(USER_AKEY));
+  assert.ok(!seen.includes(USER_AKEY.slice(-12)), "not even part of the key");
+});

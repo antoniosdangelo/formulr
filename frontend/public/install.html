@@ -9,7 +9,7 @@
   <body>
     <main class="install">
       <h1>Install Formulr in one minute</h1>
-      <p class="hint">Works in Excel on the web and in desktop Excel, with any Microsoft account. You need the access code from whoever runs this service.</p>
+      <p class="hint">Works in Excel on the web and in desktop Excel, with any Microsoft account. You need the access code from whoever runs this service, and your own AI key from <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Anthropic</a> or <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google Gemini</a>.</p>
 
       <ol class="steps">
         <li>
@@ -26,6 +26,9 @@
           <strong>Unlock it.</strong> On the <em>Home</em> tab click <em>Formulr</em>, enter the access code once, and leave "Remember on this device" ticked.
         </li>
         <li>
+          <strong>Add your AI key.</strong> In the same pane, under <em>Your AI key</em>, pick your provider, paste your key and press <em>Save key</em>. It stays on your device only, and your own AI account pays for your answers.
+        </li>
+        <li>
           <strong>Try it.</strong> Type a question in B2, then in C2 type <code>=FORMULR.ANSWER(B2)</code>. The answer fills C2 and a short explanation fills D2. Keep C2 and D2 empty first.
         </li>
       </ol>
@@ -34,10 +37,10 @@
       <ul>
         <li>Remove any older Formulr, AI Helper or Excel AI Helper entries in <em>Manage My Add-ins</em>, reload the page, and upload the file again.</li>
         <li>If you see <code>#NAME?</code>, wait a minute, reload the page, or reopen the workbook.</li>
-        <li>In the Formulr pane press <em>Run checks</em>, then <em>Copy</em>, and send the report to whoever runs this service. It never includes your access code.</li>
+        <li>In the Formulr pane press <em>Run checks</em>, then <em>Copy</em>, and send the report to whoever runs this service. It never includes your access code or your AI key.</li>
         <li>Uploaded add-ins are remembered per browser. On another laptop or browser, repeat these steps.</li>
       </ul>
-      <p class="hint">Content you send is processed by Anthropic (Claude). Do not use confidential company data until you have approval to.</p>
+      <p class="hint">Content you send is processed by the AI provider you picked. Do not use confidential company data until you have approval to.</p>
     </main>
   </body>
 </html>

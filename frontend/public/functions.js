@@ -137,6 +137,11 @@
     return k ? { "x-formulr-provider": k.provider, "x-formulr-key": k.key } : {};
   }
 
+  // Answers work with your own key alone. The access code is only for the owner pass.
+  function canAsk() {
+    return isUnlocked() || Boolean(userKey());
+  }
+
   function isUnlocked() {
     return Boolean(state.token) && Date.now() < state.expiresAt;
   }
@@ -177,7 +182,7 @@
     try {
       const res = await fetch(baseUrl() + "/api/ai", {
         method: "POST",
-        headers: Object.assign({ "content-type": "application/json", authorization: "Bearer " + state.token }, keyHeaders()),
+        headers: Object.assign({ "content-type": "application/json" }, isUnlocked() ? { authorization: "Bearer " + state.token } : {}, keyHeaders()),
         body: bodyText,
         signal: ctrl ? ctrl.signal : undefined,
       });
@@ -194,7 +199,7 @@
   }
 
   async function callApi(payload) {
-    if (!isUnlocked()) throw fnError("notAvailable", LOCKED);
+    if (!canAsk()) throw fnError("notAvailable", NEEDS_KEY);
     await acquire();
     try {
       let busyTries = 0;
@@ -569,6 +574,7 @@
   state.unlock = unlock;
   state.lock = lock;
   state.isUnlocked = isUnlocked;
+  state.canAsk = canAsk;
   state.userKey = userKey;
   state.setUserKey = setUserKey;
   state.clearUserKey = clearUserKey;

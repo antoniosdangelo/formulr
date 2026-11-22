@@ -25,15 +25,16 @@
     const unlocked = AI.isUnlocked();
     const lockBadge = $("lock-state");
     if (lockBadge) {
-      lockBadge.textContent = unlocked ? "Unlocked" : "Locked";
-      lockBadge.className = "badge " + (unlocked ? "on" : "off");
+      const ready = AI.canAsk();
+      lockBadge.textContent = ready ? "Ready" : "Add your key";
+      lockBadge.className = "badge " + (ready ? "on" : "off");
     }
     const note = $("lock-note");
     if (note) {
       note.textContent = unlocked
         ? AI.remembered
           ? "Remembered on this device until " + new Date(AI.expiresAt).toLocaleDateString() + "."
-          : "Unlocked until " + new Date(AI.expiresAt).toLocaleTimeString() + "."
+          : "Owner sign in until " + new Date(AI.expiresAt).toLocaleTimeString() + "."
         : "";
     }
   }
@@ -51,6 +52,7 @@
     } else {
       note.textContent = AI.role === "owner" ? "No key saved. Your owner pass uses the service's own key." : "No key saved yet. Answers need your own key.";
     }
+    if (typeof updateLockUi === "function") updateLockUi();
   }
 
   function onSaveKey() {
@@ -70,7 +72,7 @@
     const input = $("code");
     const code = input.value;
     input.value = "";
-    if (!code) return setStatus("Enter your access code first.", "error");
+    if (!code) return setStatus("Enter the owner code first.", "error");
     setStatus("Unlocking...");
     try {
       const remember = Boolean($("remember") && $("remember").checked);
@@ -78,7 +80,7 @@
       const needKey = AI.role !== "owner" && !AI.userKey();
       setStatus(
         (AI.remembered ? "Unlocked and remembered on this device." : "Unlocked for 2 hours.") +
-          (needKey ? " Now add your own AI key below." : " Type =FORMULR.ANSWER(cell) next to a question."),
+          (needKey ? " Now add your own AI key above." : " Type =FORMULR.ANSWER(cell) next to a question."),
         "ok",
       );
     } catch (err) {
@@ -166,7 +168,7 @@
     if (!(root.Office && Office.context && Office.context.requirements.isSetSupported("ExcelApi", "1.10"))) {
       throw new Error("This version of Excel can't read pictures (needs Excel API 1.10). Run the checks in the pane to see what your Excel supports.");
     }
-    if (!AI.isUnlocked()) throw new Error(AI.LOCKED);
+    if (!AI.canAsk()) throw new Error(AI.NEEDS_KEY);
     const instruction = instructionOverride !== undefined ? instructionOverride : ($("instruction") && $("instruction").value) || "";
     let summary = "";
     await Excel.run(async (ctx) => {
@@ -234,7 +236,7 @@
     if (!(root.Office && Office.context && Office.context.requirements.isSetSupported("ExcelApi", "1.10"))) {
       throw new Error("This version of Excel can't read pictures (needs Excel API 1.10). Run the checks in the pane to see what your Excel supports.");
     }
-    if (!AI.isUnlocked()) throw new Error(AI.LOCKED);
+    if (!AI.canAsk()) throw new Error(AI.NEEDS_KEY);
     const instruction = instructionOverride !== undefined ? instructionOverride : ($("instruction") && $("instruction").value) || "";
     let summary = "";
     await Excel.run(async (ctx) => {
@@ -328,7 +330,7 @@
   // Answer a picture that is not an Excel shape: bytes in, answer written into the cell just right of the selected cell.
   // Used by the paste box in the pane, and for in-cell pictures when Excel hands over their data.
   async function answerImageData(b64, instruction, where) {
-    if (!AI.isUnlocked()) throw new Error(AI.LOCKED);
+    if (!AI.canAsk()) throw new Error(AI.NEEDS_KEY);
     const data = await shrinkImage(b64);
     let summary = "";
     await Excel.run(async (ctx) => {
@@ -389,7 +391,7 @@
   // Answer the text in the selected cell(s): the answer goes in the next cell to the right, the explanation in the one after.
   // Needs no formulas and no function registration. Up to 10 cells per click, never overwrites, skips blanks.
   async function runAnswerCells(instructionOverride) {
-    if (!AI.isUnlocked()) throw new Error(AI.LOCKED);
+    if (!AI.canAsk()) throw new Error(AI.NEEDS_KEY);
     const instruction = instructionOverride !== undefined ? instructionOverride : ($("instruction") && $("instruction").value) || "";
     const MAX = 10;
     let summary = "";
@@ -486,7 +488,7 @@
 
   // Fires several different questions at once, the way a filled down column does, and reports how long they took.
   async function runSpeedTest(count) {
-    if (!AI.isUnlocked()) throw new Error(AI.LOCKED);
+    if (!AI.canAsk()) throw new Error(AI.NEEDS_KEY);
     const n = count || 6;
     const stamp = Date.now();
     const started = Date.now();
@@ -554,13 +556,14 @@
     } catch {
       add(false, "Service health", "could not reach the service");
     }
-    add(AI.isUnlocked(), AI.isUnlocked() ? "Unlocked" : "Locked (enter the access code, then run again)");
+    add(AI.canAsk(), AI.canAsk() ? "Ready to answer" : "No AI key saved and no owner sign in");
     // Says only whether a key is saved and for which provider, never the key.
     const k = AI.userKey && AI.userKey();
-    add(Boolean(k) || AI.role === "owner", k ? "Own AI key saved (" + k.provider + ")" : AI.role === "owner" ? "Owner pass, using the service key" : "No AI key saved (add yours in the pane)");
+    if (k) add(true, "Own AI key saved (" + k.provider + ")");
+    else if (AI.isUnlocked() && AI.role === "owner") add(true, "Owner sign in, using the service key");
     if (testModel) {
-      if (!AI.isUnlocked()) {
-        add(false, "Model test", "skipped because it is locked");
+      if (!AI.canAsk()) {
+        add(false, "Model test", "skipped because no AI key is saved");
       } else {
         try {
           const started = Date.now();
@@ -695,7 +698,7 @@
       const banner = $("banner");
       if (banner) banner.hidden = true; // Excel finished late: the warning no longer applies
       const inExcel = info && info.host === Office.HostType.Excel;
-      setStatus(inExcel ? "Ready. Enter your access code to unlock." : "Open this inside Excel.", inExcel ? "" : "error");
+      setStatus(inExcel ? (AI.canAsk() ? "Ready. Type =FORMULR.ANSWER(cell) next to a question." : "Ready. Paste your own AI key above to start.") : "Open this inside Excel.", inExcel ? "" : "error");
       if (inExcel) keepLoaded();
     });
     setTimeout(() => {

@@ -111,3 +111,40 @@ test("locking forgets the pass but keeps the key, and the stored pass never hold
     delete globalThis.localStorage;
   }
 });
+
+test("with a saved key and no sign in, answers go out with the key and no pass", async () => {
+  fresh();
+  AI.lock();
+  try {
+    AI.setUserKey("anthropic", USER_KEY);
+    assert.equal(AI.canAsk(), true);
+    await withFetch(
+      () => reply({ answer: "4", explanation: "2 plus 2." }),
+      async (calls) => {
+        await AI.functions.answer("What is 2 + 2?");
+        assert.equal(calls.length, 1);
+        assert.equal(calls[0].headers.authorization, undefined);
+        assert.equal(calls[0].headers["x-formulr-key"], USER_KEY);
+      },
+    );
+  } finally {
+    delete globalThis.localStorage;
+  }
+});
+
+test("with no key and no sign in, nothing is sent and the message asks for a key", async () => {
+  fresh();
+  AI.lock();
+  try {
+    assert.equal(AI.canAsk(), false);
+    await withFetch(
+      () => reply({ answer: "x" }),
+      async (calls) => {
+        await assert.rejects(AI.functions.answer("What is 2 + 2?"), (err) => err.message === AI.NEEDS_KEY);
+        assert.equal(calls.length, 0);
+      },
+    );
+  } finally {
+    delete globalThis.localStorage;
+  }
+});

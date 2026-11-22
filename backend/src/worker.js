@@ -253,22 +253,44 @@ async function handleAi(request, env, url) {
   requireJsonPost(request, url);
   if (!isConfigured(env)) throw new HttpError(503, "not_configured", "The service is not configured yet");
   const auth = request.headers.get("authorization") ?? "";
-  const role = auth.startsWith("Bearer ") ? await roleOf(env, auth.slice(7)) : null;
-  if (!role) throw new HttpError(401, "unauthorized", "Unlock Formulr with your access code");
+  const hasPass = auth.startsWith("Bearer ");
+  const passRole = hasPass ? await roleOf(env, auth.slice(7)) : null;
+  const own = userCredentials(request);
+  // A user with their own key needs no access code. A pass that no longer works, with no key, means sign in again.
+  if (hasPass && !passRole && !own) throw new HttpError(401, "unauthorized", "Unlock Formulr with your access code");
+  const role = passRole === "owner" ? "owner" : "guest";
   // Only the owner pass may fall back to the Worker's own key. Everyone else must send their own, or nothing is called.
-  const creds = userCredentials(request) ?? (role === "owner" ? serverCredentials(env) : null);
+  const creds = own ?? (role === "owner" ? serverCredentials(env) : null);
   if (!creds) throw new HttpError(403, "needs_key", "Add your own AI key in the Formulr pane to get answers.");
   const t0 = Date.now();
   const payload = validatePayload(await readJsonLimited(request, LIMITS.maxBodyBytes));
   const limiter = limiterFor(env);
   const now = new Date();
+  const minute = Math.floor(now.getTime() / 60000);
+  const day = now.toISOString().slice(0, 10);
   // Guests count in their own bucket, so they can never use up the owner's limit.
   const bucket = role === "owner" ? "ai" : "ai:guest";
-  const [perMin, perDay] = await Promise.all([
-    limiter.consume(`${bucket}:m:${Math.floor(now.getTime() / 60000)}`, numVar(env, "AI_PER_MINUTE", 120)),
-    limiter.consume(`${bucket}:d:${now.toISOString().slice(0, 10)}`, numVar(env, "AI_PER_DAY", 5000)),
-  ]);
-  if (!perMin.ok || !perDay.ok) throw new HttpError(429, "quota", "Usage limit reached. Try again later.");
+  const checks = [
+    limiter.consume(`${bucket}:m:${minute}`, numVar(env, "AI_PER_MINUTE", 120)),
+    limiter.consume(`${bucket}:d:${day}`, numVar(env, "AI_PER_DAY", 5000)),
+  ];
+  if (role === "guest") {
+    // Each guest key and each address also has its own small limit, so one person cannot crowd out the rest.
+    // The key is tagged with a salted, one way hash: the database never sees the key itself.
+    const [keyTag, ipTag] = await Promise.all([
+      shortHash("formulr-key:" + env.APP_PASSWORD + ":" + creds.key),
+      shortHash("formulr-ip:" + (request.headers.get("cf-connecting-ip") ?? "unknown")),
+    ]);
+    const perMinute = numVar(env, "GUEST_PER_MINUTE", 30);
+    const perDay = numVar(env, "GUEST_PER_DAY", 1500);
+    checks.push(
+      limiter.consume(`gk:m:${keyTag}:${minute}`, perMinute),
+      limiter.consume(`gk:d:${keyTag}:${day}`, perDay),
+      limiter.consume(`gi:m:${ipTag}:${minute}`, perMinute),
+      limiter.consume(`gi:d:${ipTag}:${day}`, perDay),
+    );
+  }
+  if ((await Promise.all(checks)).some((r) => !r.ok)) throw new HttpError(429, "quota", "Usage limit reached. Try again later.");
   const t1 = Date.now();
   const call = creds.provider === "anthropic" ? callAnthropic : callGemini;
   let result = await call(env, payload, creds);

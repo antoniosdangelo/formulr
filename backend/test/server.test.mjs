@@ -94,7 +94,8 @@ test("wrong origin, wrong content type and missing auth are rejected", async () 
   const body = { mode: "ask", instruction: "Summarize", input: "hi" };
   assert.equal((await post("/api/ai", body, { env, origin: "https://evil.test", headers: await authed(env) })).status, 403);
   assert.equal((await post("/api/ai", body, { env, headers: { "content-type": "text/plain", ...(await authed(env)) } })).status, 415);
-  assert.equal((await post("/api/ai", body, { env })).status, 401);
+  // No pass and no key of your own: asked to add a key, never served on the Worker's key.
+  assert.equal((await post("/api/ai", body, { env })).status, 403);
   assert.equal((await post("/api/ai", body, { env, headers: { authorization: "Bearer not.a.token" } })).status, 401);
 });
 

@@ -7,6 +7,7 @@ import { LIMITS, signToken, verifyToken, validatePayload, HttpError } from "../s
 const ORIGIN = "https://helper.test";
 const PASSWORD = "correct-horse-1";
 const KEY = "k".repeat(30);
+const OWNER = "owner-code-for-tests-only";
 
 // A D1 look-alike backed by real SQLite so the usage limiter SQL really runs.
 function fakeD1() {
@@ -25,7 +26,7 @@ function fakeD1() {
   };
 }
 
-const freshEnv = (extra = {}) => ({ GEMINI_API_KEY: KEY, APP_PASSWORD: PASSWORD, GEMINI_MODEL: "gemini-2.5-flash", QUOTAS_DB: fakeD1(), ...extra });
+const freshEnv = (extra = {}) => ({ GEMINI_API_KEY: KEY, APP_PASSWORD: PASSWORD, OWNER_CODE: OWNER, GEMINI_MODEL: "gemini-2.5-flash", QUOTAS_DB: fakeD1(), ...extra });
 
 let ipCounter = 0;
 const uniqueIp = () => `203.0.113.${++ipCounter}`;
@@ -42,7 +43,7 @@ function post(path, body, { env, headers = {}, origin = ORIGIN } = {}) {
 }
 
 async function authed(env) {
-  return { authorization: "Bearer " + (await signToken(env.APP_PASSWORD)) };
+  return { authorization: "Bearer " + (await signToken(env.OWNER_CODE ?? env.APP_PASSWORD)) };
 }
 
 const geminiOk = (obj) =>
@@ -341,7 +342,7 @@ test("image_answer attaches the picture and returns answer and explanation", asy
 
 test("very long, oddly formatted input reaches the model exactly as typed", async () => {
   const env = freshEnv();
-  const odd = "Name\tQty\r\nPen\t2\r\n<b>bold</b> **md** `code` 日本語 🙂 ${x} \\n \"quotes\" 'single'\n" + "line of text\n".repeat(36000);
+  const odd = "Name\tQty\r\nPen\t2\r\n<b>bold</b> **md** `code` æ—¥æœ¬èªž ðŸ™‚ ${x} \\n \"quotes\" 'single'\n" + "line of text\n".repeat(36000);
   assert.ok(odd.length > 400000 && odd.length <= LIMITS.maxInput);
   await withProvider(
     () => geminiOk({ answer: "ok", explanation: "fine" }),
@@ -413,7 +414,7 @@ test("tag lookalikes cannot close the data block, and the model gets no thinking
 test("clipping a long emoji answer does not split a character", async () => {
   const env = freshEnv();
   await withProvider(
-    () => geminiOk({ answer: "🙂".repeat(20000), explanation: "e" }),
+    () => geminiOk({ answer: "ðŸ™‚".repeat(20000), explanation: "e" }),
     async () => {
       const res = await post("/api/ai", { mode: "answer", input: "q" }, { env, headers: await authed(env) });
       assert.ok(!/[\ud800-\udbff]$/.test((await res.json()).answer));

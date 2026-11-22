@@ -14,20 +14,9 @@
       <p id="banner" class="banner" role="alert" hidden></p>
       <p id="status" role="status" aria-live="polite">Starting...</p>
 
-      <section>
-        <label for="code">Access code</label>
-        <div class="row">
-          <input id="code" type="password" autocomplete="off" spellcheck="false" />
-          <button id="unlock" type="button">Unlock</button>
-        </div>
-        <label class="inline"><input id="remember" type="checkbox" checked /> Remember on this device for 30 days</label>
-        <p class="hint">Only a signed, expiring pass is kept on this device, never the code itself. Untick it on a shared computer, or press Lock to forget it.</p>
-        <p class="hint" id="lock-note"></p>
-        <button id="lock" type="button" class="secondary">Lock</button>
-      </section>
-
-      <section>
+      <section id="key-section">
         <h2>Your AI key</h2>
+        <p class="hint"><strong>Formulr never uses anyone else's key.</strong> No key, no answers.</p>
         <p class="hint">Formulr runs on your own AI account. Pick your provider and paste your key once. It stays on this device only and is sent over a secure connection with each answer. It is never saved on the server.</p>
         <label for="ai-provider">Provider</label>
         <select id="ai-provider">
@@ -42,6 +31,19 @@
         <p class="hint" id="key-note"></p>
         <button id="remove-key" type="button" class="secondary">Remove key</button>
       </section>
+
+      <section>
+        <label for="code">Access code</label>
+        <div class="row">
+          <input id="code" type="password" autocomplete="off" spellcheck="false" />
+          <button id="unlock" type="button">Unlock</button>
+        </div>
+        <label class="inline"><input id="remember" type="checkbox" checked /> Remember on this device for 30 days</label>
+        <p class="hint">Only a signed, expiring pass is kept on this device, never the code itself. Untick it on a shared computer, or press Lock to forget it.</p>
+        <p class="hint" id="lock-note"></p>
+        <button id="lock" type="button" class="secondary">Lock</button>
+      </section>
+
 
       <section>
         <h2>Formula</h2>

@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
+// useLayoutEffect warns during the build time render, so it only runs in the browser.
+const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 // A looping, Excel style demo: a question is pasted into B2, =FORMULR.ANSWER(B2) is typed into C2,
 // and the answer and a one line reason appear. Pure React and CSS, no video file.
@@ -55,6 +58,21 @@ const ROWS = [1, 2, 3, 4, 5, 6];
 
 export default function ExcelDemo() {
   const [f, setF] = useState<Frame>(FINAL);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  // The selection box is one element that glides from cell to cell, like Excel. Without JavaScript the cell outline shows instead.
+  const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  useIsoLayoutEffect(() => {
+    const measure = () => {
+      const wrap = wrapRef.current;
+      const td = wrap?.querySelector<HTMLElement>(`td[data-cell="${f.sel}"]`);
+      if (!wrap || !td) return;
+      setBox({ x: td.offsetLeft, y: td.offsetTop, w: td.offsetWidth, h: td.offsetHeight });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [f.sel, f.question]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -104,7 +122,7 @@ export default function ExcelDemo() {
   const selRow = Number(f.sel.slice(1));
 
   return (
-    <figure className="xl" aria-label="Demo: a question is pasted in B2, =FORMULR.ANSWER(B2) is typed in C2, and the answer appears">
+    <figure className={"xl" + (box ? " xl-live" : "")} aria-label="Demo: a question is pasted in B2, =FORMULR.ANSWER(B2) is typed in C2, and the answer appears">
       <div className="xl-title" aria-hidden="true">
         <span className="xl-dots">
           <i />
@@ -135,7 +153,10 @@ export default function ExcelDemo() {
         <span className="xl-fx">fx</span>
         <span className="xl-bar-text">{barText.startsWith("=") ? renderFormula(barText) : barText}</span>
       </div>
-      <div className="xl-grid-wrap">
+      <div className="xl-grid-wrap" ref={wrapRef}>
+        {box && (
+          <span className="xl-selbox" aria-hidden="true" style={{ transform: `translate(${box.x}px, ${box.y}px)`, width: box.w, height: box.h }} />
+        )}
         <table className="xl-grid">
           <thead>
             <tr>
@@ -159,7 +180,7 @@ export default function ExcelDemo() {
                     .filter(Boolean)
                     .join(" ");
                   return (
-                    <td key={id} className={cls}>
+                    <td key={id} className={cls} data-cell={id}>
                       {cell(id)}
                       {id === "C2" && showAuto && (
                         <span className="xl-auto">

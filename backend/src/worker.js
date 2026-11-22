@@ -329,6 +329,10 @@ export default {
           headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" },
         });
       }
+      // The home page. Assets use html_handling "none", so "/" is mapped to index.html here.
+      if (url.pathname === "/" && request.method === "GET" && env.ASSETS) {
+        return env.ASSETS.fetch(new Request(new URL("/index.html", url.origin), request));
+      }
       if ((url.pathname === "/install" || url.pathname === "/install/") && request.method === "GET" && env.ASSETS) {
         return env.ASSETS.fetch(new Request(new URL("/install.html", url.origin), request));
       }

@@ -9,4 +9,4 @@
 ## How it was tested
 
 ## Not included
-- Nothing is deployed. A live deploy needs Antonio's typed "deploy".
+- Nothing is deployed. A live deploy needs the owner's typed "deploy".

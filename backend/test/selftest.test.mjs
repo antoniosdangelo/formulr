@@ -353,7 +353,7 @@ test("answers that look like formulas are stored as text, and a locked helper se
     assert.equal(at(wb, "B2"), "'=HYPERLINK(\"x\")");
     assert.equal(at(wb, "C2"), "'+cmd");
     AI.lock();
-    await assert.rejects(AI.app.runAnswerCells(""), /locked/i);
+    await assert.rejects(AI.app.runAnswerCells(""), /own AI key/i);
     assert.equal(calls.length, 1);
   });
 });

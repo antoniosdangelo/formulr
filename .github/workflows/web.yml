@@ -1,0 +1,29 @@
+name: web page
+# Builds the Vite + React page in frontend/web and fails if the committed
+# files in frontend/public are out of date. Skips itself until frontend/web exists.
+on:
+  pull_request:
+  push:
+    branches: [main, sandbox]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Is there a web page to build?
+        id: has
+        run: if [ -f frontend/web/package.json ]; then echo "yes=true" >> "$GITHUB_OUTPUT"; else echo "yes=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v4
+        if: steps.has.outputs.yes == 'true'
+        with:
+          node-version: 22
+      - name: Build, test, and check the committed page is current
+        if: steps.has.outputs.yes == 'true'
+        working-directory: frontend/web
+        run: |
+          npm ci
+          npm run build
+          npm test
+          git diff --exit-code ../public

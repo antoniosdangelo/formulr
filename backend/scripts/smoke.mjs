@@ -34,7 +34,7 @@ check(/frame-ancestors[^;]*\*\.officeapps\.live\.com/.test(csp), "CSP lets Offic
 check(!/script-src[^;]*unsafe-(inline|eval)/.test(csp), "CSP does not allow inline or eval scripts");
 
 const noAuth = await get("/api/ai", { method: "POST", headers: { "content-type": "application/json", origin: base }, body: "{}" });
-check(noAuth.status === 401, "AI endpoint refuses requests without a token", "status=" + noAuth.status);
+check(noAuth.status === 403, "AI endpoint refuses requests with no key of their own (never uses the Worker's key)", "status=" + noAuth.status);
 const evil = await get("/api/ai", { method: "POST", headers: { "content-type": "application/json", origin: "https://evil.example" }, body: "{}" });
 check(evil.status === 403, "AI endpoint refuses foreign origins", "status=" + evil.status);
 

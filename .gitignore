@@ -21,3 +21,4 @@ backend/test/*.private.test.mjs
 !.env.example
 .dev.vars
 .dev.vars.*
+frontend/web/.ssr/

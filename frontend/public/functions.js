@@ -140,31 +140,38 @@
     return null;
   }
 
-  // Asks the server whether a key works, before it is saved. The check lists the provider's models, so it spends nothing.
+  // Checks a key with the provider before it is saved. The call goes straight from this device to the provider,
+  // never through Formulr's server, and only lists models, so it spends nothing.
   // Returns { ok: true } for a working key, { ok: false, rejected: true, message } for a key the provider refused,
   // and { ok: false, rejected: false, message } when the check itself could not run.
+  const KEY_CHECK = {
+    anthropic: function (k) {
+      return {
+        url: "https://api.anthropic.com/v1/models?limit=1",
+        headers: { "x-api-key": k, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      };
+    },
+    gemini: function (k) {
+      return { url: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1", headers: { "x-goog-api-key": k } };
+    },
+  };
+
   async function checkKey(provider, key) {
     const k = String(key || "").trim();
+    if (!KEY_CHECK[provider]) return { ok: false, rejected: true, message: "Pick Anthropic or Gemini." };
+    if (!/^[\x21-\x7e]{20,400}$/.test(k)) return { ok: false, rejected: true, message: "That key does not look right. Copy it again from your provider." };
+    const req = KEY_CHECK[provider](k);
     let res;
     try {
-      res = await fetch(baseUrl() + "/api/key-check", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-formulr-provider": provider, "x-formulr-key": k },
-        body: "{}",
-      });
+      res = await fetch(req.url, { headers: req.headers, referrerPolicy: "no-referrer" });
     } catch {
-      return { ok: false, rejected: false, message: "Could not reach Formulr to check the key." };
+      return { ok: false, rejected: false, message: "Could not reach your AI provider to check the key." };
     }
-    let body = null;
-    try {
-      body = await res.json();
-    } catch {
-      /* no body */
+    if (res.ok) return { ok: true };
+    if (res.status === 400 || res.status === 401 || res.status === 403) {
+      return { ok: false, rejected: true, message: "Your AI provider says this key is not valid. Copy it again, or make a new one." };
     }
-    if (res.ok && body && body.ok) return { ok: true };
-    const code = body && body.error;
-    const rejected = code === "key_rejected" || code === "bad_key" || code === "bad_provider";
-    return { ok: false, rejected: rejected, message: (body && body.message) || "The key could not be checked right now." };
+    return { ok: false, rejected: false, message: "Your AI provider could not check the key right now." };
   }
 
   function keyHeaders() {

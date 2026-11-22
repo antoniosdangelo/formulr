@@ -7,8 +7,12 @@
   "type": "module",
   "scripts": {
     "knowledge": "node scripts/build-knowledge.mjs",
+    "dev": "node scripts/build-knowledge.mjs && wrangler dev",
     "pretest": "node scripts/build-knowledge.mjs",
     "test": "node --test --test-reporter=spec \"test/*.test.mjs\"",
     "deploy": "node scripts/build-knowledge.mjs && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.158.0"
   }
 }

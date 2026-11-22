@@ -564,7 +564,8 @@ test("/install serves the one minute install page, and the page points at the ma
   assert.match(html, /href="download"/);
   assert.match(html, /=FORMULR\.ANSWER\(B2\)/);
   assert.ok(!/<script/i.test(html), "no scripts: the page works under the strict policy");
-  assert.ok(!/Gemini/i.test(html));
+  assert.match(html, /Add your AI key/, "every user is told to bring their own key");
+  assert.match(html, /never includes your access code or your AI key/);
 });
 
 test("/download hands the manifest over as a file, so a bookmark saves it with one click", async () => {

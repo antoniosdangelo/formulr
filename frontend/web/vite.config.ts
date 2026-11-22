@@ -8,6 +8,9 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig(({ isSsrBuild }) => ({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": "/src" } },
+  // House standard: each project has its own dev port, and Vite stops instead of drifting to another one.
+  server: { port: 5175, strictPort: true },
+  preview: { port: 5175, strictPort: true },
   base: "/",
   build: isSsrBuild
     ? { outDir: ".ssr", emptyOutDir: true }

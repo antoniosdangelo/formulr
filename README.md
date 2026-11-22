@@ -15,7 +15,7 @@ The answer fills that cell and a one line explanation fills the one beside it.
 
 1. Open the install page and download the add-in file.
 2. In Excel (on the web or desktop) go to Insert, Add-ins, Manage My Add-ins, Upload My Add-in, and choose that file.
-3. Click **Formulr** on the Home tab and enter the access code you were given.
+3. Click **Formulr** on the Home tab. No access code is needed.
 4. Under **Your AI key**, pick Anthropic or Gemini, paste **your own** key and press Save key.
 5. Type a question in B2 and `=FORMULR.ANSWER(B2)` in C2.
 
@@ -49,13 +49,13 @@ Only for people who want their own server instead of the install page above. You
 
 1. Download this project and unzip it.
 2. Double click `setup.cmd` on Windows, or run `./setup.sh` on Mac or Linux. It signs you in to Cloudflare, deploys your own Worker, creates an access code and prints your address.
-3. Share `YOUR-ADDRESS/install` and the access code with your users.
+3. Share `YOUR-ADDRESS/install` with your users. They need only their own AI key.
 
 **Full step by step guide, troubleshooting and an FAQ: [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md).**
 
 The setup is safe to run again. `setup` re-deploys after a change, `setup --rotate-code` issues a new access code and signs out every device, `setup --reset-key` enters a new key for the Worker itself. For unattended runs (CI) set `CLOUDFLARE_API_TOKEN` (Workers Scripts Edit and D1 Edit), `CLOUDFLARE_ACCOUNT_ID`, `AIH_API_KEY` and `AIH_APP_PASSWORD` (12 or more characters), then run `node scripts/setup.mjs`. The Worker is named `excel-ai-helper` inside your Cloudflare account; that name is part of the setup and is kept as is.
 
-**The owner code.** A key saved on the Worker itself is used only by a pass from the separate `OWNER_CODE` secret, which only the person running that copy holds. Set it with `npx wrangler secret put OWNER_CODE` (12 or more characters, different from the access code). Everyone who signs in with the normal access code must use their own key.
+**The owner code.** A key saved on the Worker itself is used only by a pass from the separate `OWNER_CODE` secret, which only the person running that copy holds. Set it with `npx wrangler secret put OWNER_CODE` (12 or more characters, different from the access code). Everyone else, with or without the older access code, must use their own key. Guests have limits per key and per address (`GUEST_PER_MINUTE`, `GUEST_PER_DAY`, default 30 and 1500).
 
 ### Teach it your own material
 Put notes, formula sheets or a glossary in the `backend/knowledge/` folder and redeploy. They are added to the model's instructions, only for questions that match a pattern you choose. Your files stay private (git ignores them). See [backend/knowledge/README.md](backend/knowledge/README.md).
@@ -75,7 +75,7 @@ Plain variables in `backend/wrangler.jsonc`:
 ## How it works
 ```
 Excel (add-in: custom functions + side bar, YOUR key kept here)
-   -> Formulr Worker: checks the access code, applies usage limits, passes YOUR key on for this one call
+   -> Formulr Worker: applies usage limits per key and per address, passes YOUR key on for this one call
    -> Anthropic or Gemini, billed to YOUR account
 ```
 - The add-in files in `frontend/public/` are static and need no build step.

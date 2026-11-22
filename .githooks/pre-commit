@@ -1,33 +1,66 @@
 #!/usr/bin/env bash
-# Botlien pre-commit secret check. Blocks a commit that contains a secret file
-# or key-like text. It prints file names and the kind of match, never the value.
+# Pre-commit secret check. Blocks a commit that contains a secret file or
+# key-like text. Prints file names and the kind of match, never the value.
 # Turn on once per clone:  git config core.hooksPath .githooks
-# In an emergency (a false alarm) you can skip it with: git commit --no-verify
-# but tell the owner first, because that switches the protection off for that commit.
+# Known fake values (test fixtures, redacted examples) are listed in
+# .githooks/secret-allowlist.txt, one path pattern per line.
 set -u
 bad=0
+allow=".githooks/secret-allowlist.txt"
 
-# 1) File names that should never be committed
+allowed() {  # true if the path matches a pattern in the allowlist
+  [ -f "$allow" ] || return 1
+  while IFS= read -r pat; do
+    case "$pat" in ''|'#'*) continue ;; esac
+    case "$1" in $pat) return 0 ;; esac
+  done < "$allow"
+  return 1
+}
+
+# Key prefixes are matched with exact letter case (real keys are, e.g. AKIA is always
+# uppercase), so random data in embedded fonts or images does not trip them.
+PAT='sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[baprs]-[A-Za-z0-9-]{20,}|AIza[0-9A-Za-z_-]{35}|re_[A-Za-z0-9]{8,}_[A-Za-z0-9]{16,}|BEGIN [A-Z ]*PRIVATE KEY|Bearer [A-Za-z0-9._-]{40,}'
+# Named assignments (api_key = "...") are matched in any letter case.
+NAMED='([a-z0-9_]*_key|api[_-]?key|token|secret|password|passwd)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"'][A-Za-z0-9_+/-]{24,}["'"'"']'
+
+skipped() {  # tests, examples, media and lock files are not scanned for key-like text
+  case "$1" in *.test.*|*/test/*|*/tests/*|*/fixtures/*|*example*|*.lock|package-lock.json|*.png|*.jpg|*.jpeg|*.gif|*.mp4|*.pdf|*.zip) return 0 ;; esac
+  return 1
+}
+
+# 1) file names that should never be committed (no subprocess per file, so big commits stay fast)
 while IFS= read -r f; do
-  case "$(basename "$f")" in
+  [ -n "$f" ] || continue
+  case "${f##*/}" in
     .env|.env.*|.dev.vars|.dev.vars.*|*.pem|*.key|*.p12|*.pfx|.github_token|*credentials*|id_rsa*|*secret*.json)
       case "$f" in *.example|*example*|*.test.*|*/fixtures/*|*/test/*|*/tests/*) ;; *)
         echo "BLOCKED secret-type file: $f"; bad=1 ;; esac ;;
   esac
-done < <(git diff --cached --name-only --diff-filter=ACMR)
+done < <(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR)
 
-# 2) Key-like text in the lines being added (skips tests and examples)
-PAT='sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[baprs]-[A-Za-z0-9-]{20,}|AIza[0-9A-Za-z_-]{35}|re_[A-Za-z0-9]{8,}_[A-Za-z0-9]{16,}|BEGIN [A-Z ]*PRIVATE KEY|(api[_-]?key|token|secret|password|passwd)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"'][A-Za-z0-9_+/-]{24,}["'"'"']|Bearer [A-Za-z0-9._-]{40,}'
-for f in $(git diff --cached --name-only --diff-filter=ACMR); do
-  case "$f" in *.test.*|*/test/*|*/tests/*|*/fixtures/*|*example*|*.lock|package-lock.json|*.png|*.jpg|*.mp4|*.pdf) continue ;; esac
-  if git diff --cached -U0 -- "$f" | grep -E '^\+' | grep -vE '^\+\+\+' | grep -iEq "$PAT"; then
-    echo "BLOCKED key-like text added in: $f"; bad=1
-  fi
-done
+# 2) key-like text in added lines. One diff for the whole commit, each added line tagged
+#    with its file name; only files with a hit are checked against the skip and allow lists.
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  skipped "$f" && continue
+  allowed "$f" && continue
+  echo "BLOCKED key-like text added in: $f"; bad=1
+done < <(
+  # Byte locale (LC_ALL=C) keeps grep fast on huge lines such as embedded base64 images;
+  # patterns have no leading ".*", which made grep crawl on those lines.
+  export LC_ALL=C
+  tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
+  git -c core.quotePath=false diff --cached --no-textconv -U0 --diff-filter=ACMR |
+  awk '/^\+\+\+ /{ f=substr($0,7); sub(/\t$/,"",f); next } /^\+/{ print f "\t" substr($0,2) }' > "$tmp"
+  # Names that look like keys but are not secrets: public Turnstile site keys and request ids.
+  NOT_SECRET='(site_key|idempotency_key)["'"'"']?[[:space:]]*[:=]'
+  { grep -aE "$PAT" "$tmp"; grep -aiE "$NAMED" "$tmp" | grep -aivE "$NOT_SECRET"; } | cut -f1 | sort -u
+)
 
 if [ "$bad" = 1 ]; then
   echo ""
   echo "Commit stopped. Move the value into the project's .env (never committed) and read it from there."
+  echo "If it is a known fake value, add the path to $allow and say why."
   exit 1
 fi
 exit 0

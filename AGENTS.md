@@ -18,4 +18,4 @@ Every pull request names its owner agent, so you always know which chat to open.
 - `side: backend` or `side: frontend` says which form it is. Backend forms are merged first.
 
 ## The path every change takes
-Work branch (`backend/...` or `frontend/...`) to a pull request into `sandbox`, checks run, then a backend form and a frontend form into `main`. Merged automatically once checks pass. A live deploy always needs Antonio's typed "deploy". See `BRANCHING.md`.
+Work branch (`backend/...` or `frontend/...`) to a pull request into `sandbox`, checks run, then a backend form and a frontend form into `main`. Merged automatically once checks pass. A live deploy always needs the owner's typed "deploy". See `BRANCHING.md`.

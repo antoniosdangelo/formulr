@@ -1,6 +1,6 @@
 # Formulr branch rules
 
-Written 2026-11-21. Draft for Antonio. Nothing here is on GitHub yet.
+Written 2026-11-21.
 
 ## The two branches that always exist
 - `main`: the working, tested code. This is the only branch a live deploy comes from.
@@ -19,8 +19,8 @@ A work branch is merged into `sandbox`, tested, and then deleted. Nothing is mer
 2. Run the backend, then the front end, and use the product like a customer (see "Running it" below).
 3. Run the tests. All must pass, except the known failures listed in `KNOWN_FAILURES.md` (none written yet).
 4. Merge into `sandbox`. Delete the work branch.
-5. When `sandbox` is good, merge it into `main`. Only Antonio decides this.
-6. Publishing to the website or to Fly is a separate step. It happens only from `main`, and only after Antonio types "deploy" in the chat of the dev doing it.
+5. When `sandbox` is good, merge it into `main`. Only the owner decides this.
+6. Publishing to the website or to Fly is a separate step. It happens only from `main`, and only after the owner types "deploy" in the chat of the dev doing it.
 
 ## Running it (the sandbox test)
 - Backend first: `npm run dev` in `backend/`.
@@ -30,7 +30,7 @@ A work branch is merged into `sandbox`, tested, and then deleted. Nothing is mer
 
 ## Who may do what
 - Devs: create work branches, merge into `sandbox`.
-- Antonio: merges `sandbox` into `main`, and approves every deploy.
+- The owner: merges `sandbox` into `main`, and approves every deploy.
 - Nobody pushes straight to `main`. The push guard in `.githooks/pre-push` stops it on this laptop.
 - Nobody commits secrets. The hook in `.githooks/pre-commit` stops it on this laptop.
 

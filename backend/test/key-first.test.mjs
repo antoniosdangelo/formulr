@@ -5,7 +5,8 @@ import fs from "node:fs";
 
 const read = (rel) => fs.readFileSync(new URL(rel, import.meta.url), "utf8");
 const readme = read("../../README.md");
-const install = read("../../frontend/public/install.html");
+// The built page escapes apostrophes, so read it back as plain text.
+const install = read("../../frontend/public/install.html").replace(/&#x27;/g, "'");
 const pane = read("../../frontend/public/taskpane.html");
 
 test("README leads with the install page and your own key, and self hosting is the advanced path", () => {

@@ -3,7 +3,7 @@
 # or key-like text. It prints file names and the kind of match, never the value.
 # Turn on once per clone:  git config core.hooksPath .githooks
 # In an emergency (a false alarm) you can skip it with: git commit --no-verify
-# but tell Antonio first, because that switches the protection off for that commit.
+# but tell the owner first, because that switches the protection off for that commit.
 set -u
 bad=0
 

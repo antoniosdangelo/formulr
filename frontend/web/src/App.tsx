@@ -146,7 +146,7 @@ export default function App() {
             <li>
               <h3>Add your AI key</h3>
               <p>
-                <a href="#get-key">Get and check your key</a> below. Then click <strong>Formulr</strong> on the Home tab, paste it under
+                <a href="#get-key">Get and check your key</a> below. Then click <strong>Formulr</strong> on the Home tab, paste it under{" "}
                 <strong>Your AI key</strong> and press Save key. Then type <code>{FORMULA}</code> next to a question.
               </p>
             </li>
@@ -184,7 +184,7 @@ export default function App() {
 
       <footer className="wrap foot">
         <p>
-          <a href="manifest.xml">Manifest</a> Â· <a href="download">Download</a>
+          <a href="manifest.xml">Manifest</a> · <a href="download">Download</a>
         </p>
         <p className="muted">Not affiliated with or endorsed by Microsoft, Anthropic, Google or Cloudflare. Excel is a trademark of Microsoft.</p>
       </footer>

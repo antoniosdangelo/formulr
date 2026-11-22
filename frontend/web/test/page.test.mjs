@@ -35,6 +35,8 @@ for (const name of ["index.html", "install.html"]) {
     assert.match(t, /Questions/);
     assert.match(t, /Privacy/);
     assert.match(html, /href="download"/, "download link keeps the /download route");
+    assert.doesNotMatch(html, /Â|Ã/, "no double encoded characters");
+    assert.doesNotMatch(t, /under(<[^>]+>)?Your AI key/, "words keep their spaces");
   });
 
   test(`${name} loads only external scripts from this site`, () => {

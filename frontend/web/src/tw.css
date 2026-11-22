@@ -1,0 +1,42 @@
+/* Tailwind for the shadcn/ui and Magic UI parts only. No preflight, so the rest of the page keeps its own styles. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@source "./KeySetup.tsx";
+@source "./components";
+
+/* shadcn's colour names, pointed at the page's own colours so light and dark match the rest of the site. */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --color-card: var(--bg);
+  --color-card-foreground: var(--ink);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-ink);
+  --color-secondary: var(--accent-soft);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--accent-soft);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--danger);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--accent);
+  --animate-shine: shine var(--duration) infinite linear;
+}
+
+/* Magic UI's shine border keyframes. */
+@keyframes shine {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  to { background-position: 0% 0%; }
+}
+
+/* shadcn borders default to the border colour, normally set by preflight. */
+@layer base {
+  .key-setup, .key-setup *, .key-setup *::before, .key-setup *::after { border-color: var(--line); border-style: solid; border-width: 0; }
+  /* What preflight would normally reset for form controls, kept to the key box. */
+  .key-setup button, .key-setup input { font: inherit; color: inherit; margin: 0; }
+  .key-setup button { background-color: transparent; cursor: pointer; }
+}

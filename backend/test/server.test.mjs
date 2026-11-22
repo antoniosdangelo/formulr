@@ -820,3 +820,12 @@ test("a bad tool call from the model is returned as an error result, not a crash
     },
   );
 });
+
+test("/ serves the home page, not a blank 404", async () => {
+  const fs = await import("node:fs");
+  const html = fs.readFileSync(new URL("../../frontend/public/index.html", import.meta.url), "utf8");
+  const env = { ...freshEnv(), ASSETS: { fetch: async (req) => (new URL(req.url).pathname === "/index.html" ? new Response(html, { headers: { "content-type": "text/html" } }) : new Response("", { status: 404 })) } };
+  const res = await worker.fetch(new Request("https://helper.test/"), env);
+  assert.equal(res.status, 200);
+  assert.match(await res.text(), /Get your AI key/);
+});

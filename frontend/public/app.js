@@ -42,6 +42,9 @@
     const note = $("key-note");
     if (!note) return;
     const k = AI.userKey();
+    // The key box stands out until a key is saved, unless this is the owner's pass.
+    const box = $("key-section");
+    if (box && box.classList) box.classList.toggle("needs-key", !k && AI.role !== "owner");
     if (k) {
       if ($("ai-provider")) $("ai-provider").value = k.provider;
       note.textContent = "Saved on this device: " + (k.provider === "anthropic" ? "Anthropic" : "Gemini") + " key ending in " + k.key.slice(-4) + ".";

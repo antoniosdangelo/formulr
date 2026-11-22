@@ -1,12 +1,7 @@
 import { useState } from "react";
+import KeySetup from "./KeySetup";
 
 const FORMULA = "=FORMULR.ANSWER(B2)";
-
-const providers = [
-  { name: "Anthropic (Claude)", status: "Supported", href: "https://console.anthropic.com/settings/keys" },
-  { name: "Google Gemini", status: "Supported", href: "https://aistudio.google.com/apikey" },
-  { name: "OpenAI and others", status: "Not yet", href: "" },
-];
 
 const faq = [
   {
@@ -151,43 +146,17 @@ export default function App() {
             <li>
               <h3>Add your AI key</h3>
               <p>
-                Click <strong>Formulr</strong> on the Home tab. Under <strong>Your AI key</strong>, pick your provider, paste your key and press Save
-                key. Then type <code>{FORMULA}</code> next to a question.
+                <a href="#get-key">Get and check your key</a> below. Then click <strong>Formulr</strong> on the Home tab, paste it under{" "}
+                <strong>Your AI key</strong> and press Save key. Then type <code>{FORMULA}</code> next to a question.
               </p>
             </li>
           </ol>
         </section>
 
-        <section className="wrap" aria-labelledby="providers-title">
-          <h2 id="providers-title">Supported providers</h2>
-          <div className="table-scroll">
-            <table className="providers">
-              <thead>
-                <tr>
-                  <th scope="col">Provider</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Get a key</th>
-                </tr>
-              </thead>
-              <tbody>
-                {providers.map((p) => (
-                  <tr key={p.name}>
-                    <td>{p.name}</td>
-                    <td>{p.status}</td>
-                    <td>
-                      {p.href ? (
-                        <a href={p.href} target="_blank" rel="noopener">
-                          Get a key
-                        </a>
-                      ) : (
-                        <span className="muted">Coming later</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <section className="wrap" id="get-key" aria-labelledby="get-key-title">
+          <h2 id="get-key-title">Get your AI key</h2>
+          <p className="muted">Formulr only works with your own key. This takes about two minutes, and you only do it once.</p>
+          <KeySetup />
         </section>
 
         <section className="wrap" aria-labelledby="faq-title">

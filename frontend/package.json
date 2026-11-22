@@ -1,0 +1,10 @@
+{
+  "name": "formulr-frontend",
+  "private": true,
+  "description": "Entry point so `cd frontend && npm run dev` works like every other project. The site source is in web/; public/ holds the built site and the Excel add-in files the Worker serves.",
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "test": "npm --prefix web test"
+  }
+}

@@ -10,6 +10,7 @@
   state.expiresAt = state.expiresAt || 0;
 
   const LOCKED = "Formulr is locked. Click Formulr on the Home tab and enter your access code.";
+  const NEEDS_KEY = "Add your own AI key: click Formulr on the Home tab, pick your provider and paste your key.";
   const MAX_CACHE = 500;
   const MAX_CELL = 32000; // Excel holds 32,767 characters per cell
   const MAX_CONCURRENT = 8; // a filled down column asks many questions at once; the Worker and the AI provider handle this easily
@@ -46,7 +47,7 @@
     const s = store();
     if (!s) return false;
     try {
-      s.setItem(STORE_KEY, JSON.stringify({ token: token, expiresAt: expiresAt }));
+      s.setItem(STORE_KEY, JSON.stringify({ token: token, expiresAt: expiresAt, role: state.role === "owner" ? "owner" : "guest" }));
       return true;
     } catch {
       return false;
@@ -71,6 +72,7 @@
         state.token = saved.token;
         state.expiresAt = saved.expiresAt;
         state.remembered = true;
+        state.role = saved.role === "owner" ? "owner" : "guest";
         return true;
       }
       s.removeItem(STORE_KEY);
@@ -92,6 +94,47 @@
     state.expiresAt = 0;
     state.remembered = false;
     forget();
+  }
+
+  // ---------- the user's own AI key ----------
+
+  // Kept only in this add-in's storage on this device. It is sent over HTTPS with each answer and never stored on the server.
+  const KEY_STORE = "formulr.aikey.v1";
+  const PROVIDERS = ["anthropic", "gemini"];
+
+  function userKey() {
+    const s = store();
+    if (!s) return null;
+    try {
+      const saved = JSON.parse(s.getItem(KEY_STORE) || "null");
+      if (saved && PROVIDERS.indexOf(saved.provider) >= 0 && typeof saved.key === "string" && saved.key.length >= 20) return saved;
+    } catch {
+      /* unreadable, treat as no key */
+    }
+    return null;
+  }
+
+  function setUserKey(provider, key) {
+    const k = String(key || "").trim();
+    if (PROVIDERS.indexOf(provider) < 0) throw new Error("Pick Anthropic or Gemini.");
+    if (!/^[\x21-\x7e]{20,400}$/.test(k)) throw new Error("That key does not look right. Copy it again from your provider.");
+    const s = store();
+    if (!s) throw new Error("This browser blocks add-in storage, so the key cannot be saved.");
+    s.setItem(KEY_STORE, JSON.stringify({ provider: provider, key: k }));
+  }
+
+  function clearUserKey() {
+    const s = store();
+    try {
+      if (s) s.removeItem(KEY_STORE);
+    } catch {
+      /* nothing to clear */
+    }
+  }
+
+  function keyHeaders() {
+    const k = userKey();
+    return k ? { "x-formulr-provider": k.provider, "x-formulr-key": k.key } : {};
   }
 
   function isUnlocked() {
@@ -134,7 +177,7 @@
     try {
       const res = await fetch(baseUrl() + "/api/ai", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: "Bearer " + state.token },
+        headers: Object.assign({ "content-type": "application/json", authorization: "Bearer " + state.token }, keyHeaders()),
         body: bodyText,
         signal: ctrl ? ctrl.signal : undefined,
       });
@@ -188,6 +231,7 @@
       const body = out.body;
       if (!res.ok) {
         if (res.status === 401) lock();
+        if (res.status === 403 && body && body.error === "needs_key") throw fnError("notAvailable", NEEDS_KEY);
         const kind = res.status === 400 || res.status === 413 || res.status === 415 || res.status === 422 ? "invalidValue" : "notAvailable";
         throw fnError(kind, (body && body.message) || "Request failed (" + res.status + ")");
       }
@@ -220,6 +264,7 @@
       /* keep null */
     }
     if (!res.ok) throw new Error((body && body.message) || "Unlock failed (" + res.status + ")");
+    state.role = body.role === "owner" ? "owner" : "guest";
     setToken(body.token, body.expiresInSeconds, remember === true);
     return body.expiresInSeconds;
   }
@@ -524,6 +569,10 @@
   state.unlock = unlock;
   state.lock = lock;
   state.isUnlocked = isUnlocked;
+  state.userKey = userKey;
+  state.setUserKey = setUserKey;
+  state.clearUserKey = clearUserKey;
+  state.NEEDS_KEY = NEEDS_KEY;
   state.setToken = setToken;
   state.restore = restore;
   state.associateNow = associateNow;

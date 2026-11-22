@@ -10,6 +10,7 @@
   --cell: #ffffff;
   --grid: #d9dedb;
   --head: #eef1ef;
+  --danger: #b42318;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -25,6 +26,7 @@
     --cell: #171c19;
     --grid: #2c3430;
     --head: #20272333;
+    --danger: #ff8a80;
     color-scheme: dark;
   }
 }
@@ -122,3 +124,5 @@ main > section { padding: 40px 0 8px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+[id] { scroll-margin-top: 72px; }

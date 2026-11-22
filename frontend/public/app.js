@@ -55,17 +55,38 @@
     if (typeof updateLockUi === "function") updateLockUi();
   }
 
-  function onSaveKey() {
+  // A key is checked with the provider before it is saved, so a wrong key is caught here and not on the first formula.
+  // If the check itself cannot run (offline, provider busy), the key is saved anyway and checked on the first answer.
+  async function onSaveKey() {
     const input = $("ai-key");
-    const key = input.value;
-    input.value = "";
+    const key = String(input.value || "").trim();
+    if (!key) return setStatus("Paste your AI key first.", "error");
+    const guess = AI.guessProvider(key);
+    if (guess && $("ai-provider").value !== guess) $("ai-provider").value = guess;
+    const provider = $("ai-provider").value;
+    const button = $("save-key");
+    if (button) button.disabled = true;
+    setStatus("Checking your key with " + (provider === "anthropic" ? "Anthropic" : "Google") + "...");
     try {
-      AI.setUserKey($("ai-provider").value, key);
-      setStatus("Key saved on this device.", "ok");
+      const check = await AI.checkKey(provider, key);
+      if (!check.ok && check.rejected) {
+        setStatus(check.message + " Nothing was saved.", "error");
+        return;
+      }
+      AI.setUserKey(provider, key);
+      input.value = "";
+      setStatus(
+        check.ok
+          ? "Your key works and is saved on this device. Type =FORMULR.ANSWER(B2) next to a question."
+          : "Key saved. " + check.message + " It will be checked on your first answer.",
+        check.ok ? "ok" : "",
+      );
     } catch (err) {
       setStatus(err.message, "error");
+    } finally {
+      if (button) button.disabled = false;
+      updateKeyUi();
     }
-    updateKeyUi();
   }
 
   async function onUnlock() {

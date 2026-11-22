@@ -1,0 +1,30 @@
+name: live check
+# Every 6 hours, run the public smoke check against your own deployed Worker.
+# Set a repository secret named FORMULR_URL to your Worker address.
+# Without that secret the job skips itself, so forks stay green.
+# It reads only public routes. It never sends an access code or an AI request.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      FORMULR_URL: ${{ secrets.FORMULR_URL }}
+    steps:
+      - name: Skip when no Worker address is set
+        if: env.FORMULR_URL == ''
+        run: echo "FORMULR_URL is not set, nothing to check."
+      - uses: actions/checkout@v4
+        if: env.FORMULR_URL != ''
+      - uses: actions/setup-node@v4
+        if: env.FORMULR_URL != ''
+        with:
+          node-version: 22
+      - name: Smoke check the live Worker
+        if: env.FORMULR_URL != ''
+        run: node scripts/smoke.mjs "$FORMULR_URL"

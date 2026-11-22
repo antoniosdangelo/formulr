@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Formulr onboarding</title>
+<link rel="stylesheet" href="/web/main.css" />
+<style>
+  html, body { margin: 0; background: #fff; }
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; background: #fff; font-family: "Segoe UI", system-ui, sans-serif; color: #16191a; }
+  .card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: none; }
+  .card .logo { width: 64px; height: 64px; border-radius: 14px; margin-bottom: 22px; }
+  .card h1 { font-size: 54px; letter-spacing: -0.03em; margin: 0 0 14px; max-width: none; }
+  .card p { font-size: 22px; color: #5f6763; margin: 0; }
+  .card .url { margin-top: 26px; font-size: 18px; color: #1f7a4a; font-weight: 600; }
+  .scene { position: absolute; inset: 0; display: grid; grid-template-columns: 330px 1fr; gap: 28px; padding: 44px 44px 44px 52px; box-sizing: border-box; }
+  .side { display: flex; flex-direction: column; justify-content: center; }
+  .stepno { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #1f7a4a; margin-bottom: 12px; }
+  .side h2 { font-size: 36px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 14px; }
+  .side p { font-size: 18px; color: #5f6763; margin: 0; line-height: 1.5; }
+  .dots { display: flex; gap: 8px; margin-top: 28px; }
+  .dots i { width: 28px; height: 4px; border-radius: 2px; background: #e3e6e4; }
+  .dots i.on { background: #1f7a4a; }
+  .win { position: relative; align-self: center; }
+  .win .xl { max-width: none; width: 100%; box-shadow: 0 30px 70px rgba(16,24,20,.14), 0 2px 6px rgba(16,24,20,.06); }
+  .body { display: grid; grid-template-columns: 1fr 0px; }
+  .body.pane-open { grid-template-columns: 1fr 250px; }
+  .pane { border-left: 1px solid #dadada; background: #fff; overflow: hidden; font-size: 12.5px; }
+  .pane-in { width: 250px; padding: 12px 14px; box-sizing: border-box; }
+  .pane h4 { margin: 0 0 4px; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .pane .hint { color: #666; margin: 0 0 10px; font-size: 11.5px; }
+  .pane label { display: block; font-weight: 600; margin: 8px 0 4px; }
+  .pane .field { border: 1px solid #c8c8c8; border-radius: 4px; height: 28px; display: flex; align-items: center; padding: 0 8px; font-family: Consolas, monospace; letter-spacing: 1px; }
+  .pane .btn { margin-top: 10px; display: inline-flex; padding: 6px 12px; border-radius: 4px; background: #217346; color: #fff; font-weight: 600; }
+  .pane .btn.press { filter: brightness(.85); }
+  .pane .ok { margin-top: 10px; color: #1f7a4a; font-weight: 600; }
+  .pane .busy { margin-top: 10px; color: #777; font-style: italic; }
+  .dialog { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%); width: 430px; background: #fff; border: 1px solid #c8c8c8; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,.25); font-size: 13px; z-index: 5; }
+  .dialog .dh { padding: 12px 16px; border-bottom: 1px solid #e3e3e3; font-weight: 600; }
+  .dialog .db { padding: 16px; }
+  .dialog .file { display: flex; align-items: center; gap: 8px; border: 1px solid #c8c8c8; border-radius: 4px; padding: 8px 10px; font-family: Consolas, monospace; font-size: 12.5px; }
+  .dialog .df { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 16px; }
+  .dialog .b { padding: 6px 14px; border-radius: 4px; border: 1px solid #c8c8c8; }
+  .dialog .b.p { background: #217346; color: #fff; border-color: #217346; }
+  .dialog .b.press { filter: brightness(.85); }
+  .cursor { position: absolute; width: 18px; height: 18px; z-index: 9; pointer-events: none; transition: none; }
+  .cursor svg { display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .click { position: absolute; width: 30px; height: 30px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid #217346; z-index: 8; }
+  .xl-formulr.pop { box-shadow: 0 0 0 4px rgba(33,115,70,.28); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+const Q = "A train leaves at 3:15 PM and drives 180 miles at 60 mph. When does it arrive?";
+const F = "=FORMULR.ANSWER(B2)";
+const ANS = "6:15 PM";
+const WHY = "180 miles at 60 mph takes 3 hours, so 3:15 PM plus 3 hours.";
+const T = { title: 0, s1: 3000, s2: 9000, s3: 14500, end: 23500, total: 27000 };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x, 0, 1), 3);
+const fade = (t, a, d = 400) => ease((t - a) / d);
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const fmla = (s) => esc(s).replace("B2", '<span class="xl-refword">B2</span>');
+
+function sheet(o) {
+  const cols = ["A", "B", "C", "D", "E"];
+  let h = '<div class="xl-grid-wrap"><table class="xl-grid"><thead><tr><th class="xl-corner"></th>';
+  for (const c of cols) h += `<th class="${o.sel && o.sel[0] === c ? "hl" : ""}">${c}</th>`;
+  h += "</tr></thead><tbody>";
+  for (let r = 1; r <= 7; r++) {
+    h += `<tr class="${r === 2 ? "tall" : ""}"><th class="${o.sel && +o.sel.slice(1) === r ? "hl" : ""}">${r}</th>`;
+    for (const c of cols) {
+      const id = c + r;
+      const cls = ["xl-c" + c, id === o.sel ? "sel" : "", id === "B2" && o.ref ? "ref" : "", id === "B2" && o.paste ? "paste" : ""].join(" ");
+      let v = "";
+      if (id === "B1") v = "<b>Question</b>";
+      if (id === "C1") v = "<b>Answer</b>";
+      if (id === "D1") v = "<b>Why</b>";
+      if (id === "B2" && o.q) v = `<span style="opacity:${o.qa}">${esc(Q)}</span>`;
+      if (id === "B2" && o.paste) v += '<span class="xl-chip">Ctrl+V</span>';
+      if (id === "C2") {
+        if (o.typing != null) v = `<span class="xl-edit">${fmla(F.slice(0, o.typing))}<span class="xl-caret"></span></span>` + (o.auto ? '<span class="xl-auto"><span class="on">ƒx FORMULR.ANSWER</span></span>' : "");
+        else if (o.thinking) v = '<span class="xl-busy">Thinking...</span>';
+        else if (o.ans) v = `<strong class="xl-answer" style="opacity:${o.ansA}">${ANS}</strong>`;
+      }
+      if (id === "D2" && o.ans) v = `<span class="xl-why" style="opacity:${o.ansA}">${esc(WHY)}</span>`;
+      h += `<td class="${cls}">${v}</td>`;
+    }
+    h += "</tr>";
+  }
+  return h + "</tbody></table></div>";
+}
+
+function excel(o) {
+  const tabs = ["File", "Home", "Insert", "Formulas", "Data", "View"].map((t) => `<span class="${t === o.tab ? "on" : ""}">${t}</span>`).join("");
+  const formulr = o.formulr ? `<span class="xl-formulr ${o.pop ? "pop" : ""}" style="opacity:${o.formulrA}"><img src="/icon-32.png" width="18" height="18" alt="">Formulr</span>` : "";
+  return `<figure class="xl">
+    <div class="xl-title"><span class="xl-dots"><i></i><i></i><i></i></span><span>Quarterly review.xlsx</span><span class="xl-title-right">Excel</span></div>
+    <div class="xl-tabs">${tabs}</div>
+    <div class="xl-ribbon"><span class="xl-group"></span><span class="xl-group wide"></span><span class="xl-group"></span>${formulr}</div>
+    <div class="xl-bar"><span class="xl-name">${o.sel || "A1"}</span><span class="xl-fx">fx</span><span class="xl-bar-text">${o.bar || ""}</span></div>
+    <div class="body ${o.pane ? "pane-open" : ""}">${sheet(o)}<div class="pane">${o.pane || ""}</div></div>
+    <div class="xl-sheets"><span class="on">Sheet1</span><span class="xl-ready">${o.thinking ? "Calculating..." : "Ready"}</span></div>
+  </figure>`;
+}
+
+function pane(o) {
+  return `<div class="pane-in">
+    <h4><img src="/icon-32.png" width="16" height="16" alt="">Formulr</h4>
+    <p class="hint">Formulr never uses anyone else's key.</p>
+    <label>Provider</label><div class="field" style="font-family:inherit;letter-spacing:0">Anthropic (Claude) ▾</div>
+    <label>API key</label><div class="field">${"•".repeat(o.dots || 0)}${o.caret ? '<span class="xl-caret"></span>' : ""}</div>
+    <span class="btn ${o.press ? "press" : ""}">Save key</span>
+    ${o.busy ? '<div class="busy">Checking your key with Anthropic...</div>' : ""}
+    ${o.ok ? `<div class="ok" style="opacity:${o.okA}">✓ Your key works and is saved on this device.</div>` : ""}
+  </div>`;
+}
+
+const ARROW = '<svg width="18" height="18" viewBox="0 0 18 18"><path d="M2 1l12 7-5.5 1.3L12 15l-2.2 1-3.3-5.6L2 14z" fill="#fff" stroke="#111" stroke-width="1.2"/></svg>';
+function cursor(x, y, clickAt, t) {
+  let h = `<div class="cursor" style="left:${x}px;top:${y}px">${ARROW}</div>`;
+  if (clickAt != null && t >= clickAt && t < clickAt + 450) {
+    const k = (t - clickAt) / 450;
+    h += `<div class="click" style="left:${x}px;top:${y}px;opacity:${1 - k};transform:scale(${0.6 + k})"></div>`;
+  }
+  return h;
+}
+const lerp = (a, b, k) => a + (b - a) * ease(k);
+function move(t, pts) { // pts: [[time, x, y], ...]
+  if (t <= pts[0][0]) return pts[0].slice(1);
+  for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) {
+    const k = (t - pts[i - 1][0]) / (pts[i][0] - pts[i - 1][0]);
+    return [lerp(pts[i - 1][1], pts[i][1], k), lerp(pts[i - 1][2], pts[i][2], k)];
+  }
+  return pts[pts.length - 1].slice(1);
+}
+
+function side(n, title, text, a) {
+  return `<div class="side" style="opacity:${a};transform:translateY(${(1 - a) * 12}px)">
+    <div class="stepno">Step ${n} of 3</div><h2>${title}</h2><p>${text}</p>
+    <div class="dots">${[1, 2, 3].map((i) => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</div></div>`;
+}
+
+function render(t) {
+  const st = document.getElementById("stage");
+  if (t < T.s1) {
+    const a = fade(t, 200, 600) * (1 - fade(t, T.s1 - 500, 500));
+    st.innerHTML = `<div class="card" style="opacity:${a}"><img class="logo" src="/icon-80.png" alt=""><h1>Formulr</h1><p>AI answers inside your Excel formulas, on your own AI key.</p></div>`;
+    return;
+  }
+  if (t >= T.end) {
+    const a = fade(t, T.end, 600);
+    st.innerHTML = `<div class="card" style="opacity:${a}"><img class="logo" src="/icon-80.png" alt=""><h1>Your key. Your data.<br>Answers in seconds.</h1><p>Set up in three steps. No sign up, no access code.</p><div class="url">excel-ai-helper.comprsly-antonio.workers.dev</div></div>`;
+    return;
+  }
+  let o = { tab: "Home", sel: "A1" }, s, cur = "";
+  const winX = 52 + 330 + 28; // left edge of the Excel window inside the stage
+  if (t < T.s2) { // step 1: add the add-in
+    const a = fade(t, T.s1, 500);
+    s = side(1, "Add Formulr to Excel", "Upload one small file under Insert, Add-ins. Formulr then sits on your Home tab.", a);
+    o.tab = t < T.s1 + 3600 ? "Insert" : "Home";
+    const dlg = t >= T.s1 + 900 && t < T.s1 + 3300;
+    o.formulr = t >= T.s1 + 3600; o.formulrA = fade(t, T.s1 + 3600, 400); o.pop = t >= T.s1 + 3900 && t < T.s1 + 5200;
+    o.pane = t >= T.s1 + 5000 ? pane({}) : "";
+    let html = excel(o);
+    if (dlg) html += `<div class="dialog" style="opacity:${fade(t, T.s1 + 900, 300)}"><div class="dh">Upload Add-in</div><div class="db">Browse to your manifest file.<div class="file" style="margin-top:10px">📄 formulr-manifest.xml</div></div><div class="df"><span class="b">Cancel</span><span class="b p ${t > T.s1 + 2900 ? "press" : ""}">Upload</span></div></div>`;
+    const [x, y] = move(t, [[T.s1, 520, 420], [T.s1 + 2700, 575, 288], [T.s1 + 4200, 575, 288], [T.s1 + 4800, 760, 94], [T.s1 + 6000, 760, 94]]);
+    cur = cursor(x, y, t > T.s1 + 4600 ? T.s1 + 4800 : T.s1 + 2900, t);
+    st.innerHTML = `<div class="scene">${s}<div class="win">${html}${cur}</div></div>`;
+    return;
+  }
+  o.formulr = true; o.formulrA = 1;
+  if (t < T.s3) { // step 2: paste your key
+    const a = fade(t, T.s2, 500), b = T.s2;
+    s = side(2, "Paste your own AI key", "Pick Anthropic or Gemini and paste your key. Formulr checks it, then keeps it on your device only.", a);
+    const dots = Math.floor(clamp((t - b - 900) / 1300, 0, 1) * 26);
+    const press = t > b + 2700 && t < b + 2900;
+    const busy = t >= b + 2900 && t < b + 3800;
+    o.pane = pane({ dots, caret: t > b + 700 && t < b + 2600, press, busy, ok: t >= b + 3800, okA: fade(t, b + 3800, 400) });
+    const [x, y] = move(t, [[b, 640, 380], [b + 600, 700, 300], [b + 2300, 700, 300], [b + 2700, 628, 345], [b + 5000, 628, 345]]);
+    cur = cursor(x, y, t > b + 1500 ? b + 2750 : b + 600, t);
+    st.innerHTML = `<div class="scene">${s}<div class="win">${excel(o)}${cur}</div></div>`;
+    return;
+  }
+  // step 3: ask in a cell
+  const b = T.s3, a = fade(t, b, 500);
+  s = side(3, "Ask in a cell", "Paste a question, type =FORMULR.ANSWER next to it, and the answer fills the cell.", a);
+  o.pane = pane({ dots: 26, ok: true, okA: 1 });
+  o.sel = t < b + 700 ? "A1" : t < b + 2100 ? "B2" : t < b + 5900 ? "C2" : t < b + 7600 ? "C3" : "C2";
+  o.paste = t >= b + 1100 && t < b + 1900;
+  o.q = t >= b + 1300; o.qa = fade(t, b + 1300, 300);
+  const typeStart = b + 2500, typeEnd = b + 5000;
+  if (t >= typeStart && t < typeEnd + 600) {
+    o.typing = clamp(Math.floor(((t - typeStart) / (typeEnd - typeStart)) * F.length), 1, F.length);
+    o.auto = o.typing >= 4 && o.typing < 16;
+    o.ref = o.typing >= 18;
+  }
+  o.thinking = t >= typeEnd + 600 && t < b + 7300;
+  o.ans = t >= b + 7300; o.ansA = fade(t, b + 7300, 400);
+  o.bar = o.sel === "B2" && o.q ? esc(Q) : o.typing != null ? fmla(F.slice(0, o.typing)) : o.sel === "C2" && o.ans ? fmla(F) : "";
+  const [x, y] = move(t, [[b, 520, 440], [b + 600, 200, 255], [b + 2000, 200, 255], [b + 2400, 305, 215], [b + 9000, 305, 215]]);
+  cur = cursor(x, y, t < b + 2200 ? b + 650 : b + 2400, t);
+  st.innerHTML = `<div class="scene">${s}<div class="win">${excel(o)}${cur}</div></div>`;
+}
+
+window.__render = render;
+window.__total = T.total;
+if (!location.search.includes("manual")) {
+  const t0 = performance.now();
+  const loop = () => { render((performance.now() - t0) % T.total); requestAnimationFrame(loop); };
+  loop();
+}
+</script>
+</body>
+</html>

@@ -31,7 +31,37 @@ const json = (status, body, extra = {}) =>
 
 const hasKey = (v) => typeof v === "string" && v.length >= 20;
 const providerOf = (env) => (hasKey(env.ANTHROPIC_API_KEY) ? "anthropic" : hasKey(env.GEMINI_API_KEY) ? "gemini" : null);
-const isConfigured = (env) => providerOf(env) !== null && typeof env.APP_PASSWORD === "string" && env.APP_PASSWORD.length >= 8;
+const guestCodeSet = (env) => typeof env.APP_PASSWORD === "string" && env.APP_PASSWORD.length >= 8;
+// The owner code is the only pass that may spend the Worker's own key. It must be long and must differ from the guest code.
+const ownerCodeSet = (env) => typeof env.OWNER_CODE === "string" && env.OWNER_CODE.length >= 12 && env.OWNER_CODE !== env.APP_PASSWORD;
+// Guests always bring their own key, so a Worker with no key of its own still serves them.
+const isConfigured = (env) => guestCodeSet(env);
+
+const PROVIDERS = new Set(["anthropic", "gemini"]);
+const KEY_SHAPE = /^[\x21-\x7e]{20,400}$/;
+
+// The user's own key travels in a header on each request. It is used for that one call and never logged, stored or echoed.
+function userCredentials(request) {
+  const key = (request.headers.get("x-formulr-key") ?? "").trim();
+  if (!key) return null;
+  if (!KEY_SHAPE.test(key)) throw new HttpError(400, "bad_key", "That AI key does not look right. Paste it again in the Formulr pane.");
+  let provider = (request.headers.get("x-formulr-provider") ?? "").trim().toLowerCase();
+  if (!provider) provider = key.startsWith("sk-ant-") ? "anthropic" : key.startsWith("AIza") ? "gemini" : "";
+  if (!PROVIDERS.has(provider)) throw new HttpError(400, "bad_provider", "Pick Anthropic or Gemini as your AI provider in the Formulr pane.");
+  return { provider, key };
+}
+
+function serverCredentials(env) {
+  const provider = providerOf(env);
+  if (!provider) return null;
+  return { provider, key: provider === "anthropic" ? env.ANTHROPIC_API_KEY : env.GEMINI_API_KEY };
+}
+
+async function roleOf(env, token) {
+  if (ownerCodeSet(env) && (await verifyToken(env.OWNER_CODE, token))) return "owner";
+  if (guestCodeSet(env) && (await verifyToken(env.APP_PASSWORD, token))) return "guest";
+  return null;
+}
 
 const numVar = (env, name, fallback) => {
   const n = Number(env[name]);
@@ -92,11 +122,14 @@ async function handleSession(request, env, url) {
   const perDay = await limiter.consume(`login:d:${ip}:${day}`, numVar(env, "LOGIN_PER_DAY", 40));
   if (!perMin.ok || !perDay.ok) throw new HttpError(429, "too_many_attempts", "Too many attempts. Wait a minute and try again.");
   const body = await readJsonLimited(request, 2048);
-  if (typeof body?.code !== "string" || !(await safeEqual(body.code, env.APP_PASSWORD))) {
+  if (typeof body?.code !== "string") throw new HttpError(401, "bad_code", "That access code is not right");
+  const isOwner = ownerCodeSet(env) && (await safeEqual(body.code, env.OWNER_CODE));
+  if (!isOwner && !(await safeEqual(body.code, env.APP_PASSWORD))) {
     throw new HttpError(401, "bad_code", "That access code is not right");
   }
   const ttl = body.remember === true ? LIMITS.rememberTtlSeconds : LIMITS.tokenTtlSeconds;
-  return json(200, { token: await signToken(env.APP_PASSWORD, Date.now(), ttl), expiresInSeconds: ttl });
+  const secret = isOwner ? env.OWNER_CODE : env.APP_PASSWORD;
+  return json(200, { token: await signToken(secret, Date.now(), ttl), expiresInSeconds: ttl, role: isOwner ? "owner" : "guest" });
 }
 
 // Our own wording for provider failures. The provider's own message is only passed on for 400s about the input, never anything that could echo a key.
@@ -118,12 +151,12 @@ function providerStatusError(res, bodyText) {
 const MODEL_NAME = /^[a-z0-9.\-]{3,60}$/;
 
 // One call to the Messages API. All calls in one answer share the same deadline.
-async function postMessages(env, body, ctrl) {
+async function postMessages(creds, body, ctrl) {
   let res;
   try {
     res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      headers: { "content-type": "application/json", "x-api-key": creds.key, "anthropic-version": "2023-06-01" },
       body: JSON.stringify(body),
       signal: ctrl.signal,
     });
@@ -147,7 +180,7 @@ const CALC_NOTE =
 const MAX_TOOL_TURNS = 2;
 
 // Questions with options, and pictures, run with the calculator tools. If the provider rejects the tool request for any reason, the same question is asked again without tools.
-async function callAnthropic(env, payload) {
+async function callAnthropic(env, payload, creds) {
   const model = payload.careful
     ? MODEL_NAME.test(env.ANTHROPIC_MODEL_CAREFUL ?? "") ? env.ANTHROPIC_MODEL_CAREFUL : "claude-sonnet-5-5"
     : MODEL_NAME.test(env.ANTHROPIC_MODEL ?? "") ? env.ANTHROPIC_MODEL : "claude-sonnet-5-5";
@@ -157,7 +190,7 @@ async function callAnthropic(env, payload) {
     const base = buildAnthropicBody(payload, model);
     if (env.CALC_TOOLS !== "off" && needsCare(payload)) {
       try {
-        const data = await runWithTools(env, base, ctrl);
+        const data = await runWithTools(creds, base, ctrl);
         const result = normalizeResult(payload, readAnthropicJson(data));
         Object.defineProperty(result, "_rounds", { value: data._rounds ?? 0, enumerable: false });
         return result;
@@ -165,18 +198,18 @@ async function callAnthropic(env, payload) {
         if (err?.code !== "provider_rejected" && err?.code !== "bad_provider_output") throw err;
       }
     }
-    return normalizeResult(payload, readAnthropicJson(await postMessages(env, base, ctrl)));
+    return normalizeResult(payload, readAnthropicJson(await postMessages(creds, base, ctrl)));
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function runWithTools(env, base, ctrl) {
+async function runWithTools(creds, base, ctrl) {
   const withTools = { ...base, tools: TOOLS, system: [...base.system, { type: "text", text: CALC_NOTE }] };
   let messages = base.messages;
   for (let turn = 0; ; turn++) {
     const last = turn >= MAX_TOOL_TURNS;
-    const data = await postMessages(env, { ...withTools, messages, ...(last ? { tool_choice: { type: "none" } } : {}) }, ctrl);
+    const data = await postMessages(creds, { ...withTools, messages, ...(last ? { tool_choice: { type: "none" } } : {}) }, ctrl);
     if (data.stop_reason !== "tool_use" || last) return Object.assign(data, { _rounds: turn });
     const uses = (data.content ?? []).filter((b) => b?.type === "tool_use");
     if (uses.length === 0) return Object.assign(data, { _rounds: turn });
@@ -188,7 +221,7 @@ async function runWithTools(env, base, ctrl) {
   }
 }
 
-async function callGemini(env, payload) {
+async function callGemini(env, payload, creds) {
   const model = /^[a-z0-9.\-]{3,60}$/.test(env.GEMINI_MODEL ?? "") ? env.GEMINI_MODEL : "gemini-2.5-flash";
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), PROVIDER_TIMEOUT_MS);
@@ -196,7 +229,7 @@ async function callGemini(env, payload) {
   try {
     res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      headers: { "content-type": "application/json", "x-goog-api-key": creds.key },
       body: JSON.stringify(buildGeminiBody(payload)),
       signal: ctrl.signal,
     });
@@ -220,25 +253,29 @@ async function handleAi(request, env, url) {
   requireJsonPost(request, url);
   if (!isConfigured(env)) throw new HttpError(503, "not_configured", "The service is not configured yet");
   const auth = request.headers.get("authorization") ?? "";
-  if (!auth.startsWith("Bearer ") || !(await verifyToken(env.APP_PASSWORD, auth.slice(7)))) {
-    throw new HttpError(401, "unauthorized", "Unlock Formulr with your access code");
-  }
+  const role = auth.startsWith("Bearer ") ? await roleOf(env, auth.slice(7)) : null;
+  if (!role) throw new HttpError(401, "unauthorized", "Unlock Formulr with your access code");
+  // Only the owner pass may fall back to the Worker's own key. Everyone else must send their own, or nothing is called.
+  const creds = userCredentials(request) ?? (role === "owner" ? serverCredentials(env) : null);
+  if (!creds) throw new HttpError(403, "needs_key", "Add your own AI key in the Formulr pane to get answers.");
   const t0 = Date.now();
   const payload = validatePayload(await readJsonLimited(request, LIMITS.maxBodyBytes));
   const limiter = limiterFor(env);
   const now = new Date();
+  // Guests count in their own bucket, so they can never use up the owner's limit.
+  const bucket = role === "owner" ? "ai" : "ai:guest";
   const [perMin, perDay] = await Promise.all([
-    limiter.consume(`ai:m:${Math.floor(now.getTime() / 60000)}`, numVar(env, "AI_PER_MINUTE", 120)),
-    limiter.consume(`ai:d:${now.toISOString().slice(0, 10)}`, numVar(env, "AI_PER_DAY", 5000)),
+    limiter.consume(`${bucket}:m:${Math.floor(now.getTime() / 60000)}`, numVar(env, "AI_PER_MINUTE", 120)),
+    limiter.consume(`${bucket}:d:${now.toISOString().slice(0, 10)}`, numVar(env, "AI_PER_DAY", 5000)),
   ]);
   if (!perMin.ok || !perDay.ok) throw new HttpError(429, "quota", "Usage limit reached. Try again later.");
   const t1 = Date.now();
-  const call = providerOf(env) === "anthropic" ? callAnthropic : callGemini;
-  let result = await call(env, payload);
+  const call = creds.provider === "anthropic" ? callAnthropic : callGemini;
+  let result = await call(env, payload, creds);
   // A wrong answer corrected inside its own explanation must never reach the sheet. Ask once more, with more care, and use that.
   if ((payload.mode === "answer" || payload.mode === "image_answer") && contradictsItself(result)) {
     try {
-      result = await call(env, { ...payload, careful: true, retry: true });
+      result = await call(env, { ...payload, careful: true, retry: true }, creds);
     } catch {
       /* keep the first result if the second attempt fails */
     }

@@ -7,7 +7,7 @@
     "binding": "ASSETS",
     "html_handling": "none",
     "not_found_handling": "none",
-    "run_worker_first": ["/api/*", "/manifest.xml", "/health", "/install", "/install/", "/download"]
+    "run_worker_first": ["/", "/api/*", "/manifest.xml", "/health", "/install", "/install/", "/download"]
   },
   "vars": {
     "GEMINI_MODEL": "gemini-2.5-flash",

@@ -68,13 +68,22 @@ test("the add-in files are still there, untouched by the build", () => {
   assert.match(read("taskpane.html"), /id="key-section"/);
 });
 
-test("the key guide checks keys through this site only and never stores them", () => {
+test("the key check goes straight to the provider, never through Formulr, and nothing is stored", () => {
   const src = fs.readFileSync(new URL("../src/KeySetup.tsx", import.meta.url), "utf8");
-  assert.match(src, /fetch\("\/api\/key-check"/);
+  assert.match(src, /https:\/\/api\.anthropic\.com\/v1\/models/);
+  assert.match(src, /https:\/\/generativelanguage\.googleapis\.com\/v1beta\/models/);
+  assert.doesNotMatch(src, /\/api\//, "no call to Formulr's own server");
   assert.doesNotMatch(src, /localStorage|sessionStorage|indexedDB|document\.cookie/, "the page keeps the key in memory only");
   assert.doesNotMatch(src, /[?&]key=/, "the key never goes in an address");
   const js = read("web/main.js");
-  assert.ok(js.includes("/api/key-check"), "the built script has the key check");
+  assert.ok(js.includes("api.anthropic.com/v1/models"), "the built script has the direct check");
+});
+
+test("the copied shadcn/ui and Magic UI code keeps its MIT notices", () => {
+  const notes = fs.readFileSync(new URL("../src/components/LICENSES.md", import.meta.url), "utf8");
+  assert.match(notes, /Copyright \(c\) 2023 shadcn/);
+  assert.match(notes, /Copyright \(c\) Magic UI/);
+  assert.match(notes, /Permission is hereby granted/);
 });
 
 test("the add-in pane checks a key before saving it and links to the guide", () => {
@@ -82,4 +91,7 @@ test("the add-in pane checks a key before saving it and links to the guide", () 
   assert.match(pane, /How do I get a key\?/);
   assert.match(pane, /href="\/#get-key"/);
   assert.match(read("app.js"), /AI\.checkKey\(/);
+  const fn = read("functions.js");
+  assert.doesNotMatch(fn, /\/api\/key-check/, "the pane checks keys with the provider directly");
+  assert.match(fn, /anthropic-dangerous-direct-browser-access/);
 });

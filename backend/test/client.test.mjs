@@ -94,7 +94,7 @@ test("functions are locked until unlocked and never call the network while locke
   await withFetch(
     () => reply({ answer: "x" }),
     async (calls) => {
-      await assert.rejects(AI.functions.ask("Summarize", "hi"), (e) => e.kind === "notAvailable" && /locked/i.test(e.message));
+      await assert.rejects(AI.functions.ask("Summarize", "hi"), (e) => e.kind === "notAvailable" && e.message === AI.NEEDS_KEY);
       assert.equal(calls.length, 0);
     },
   );
@@ -287,7 +287,7 @@ test("Extract image writes nothing if the result would land on content", async (
 test("Extract image reports a locked helper, a missing picture and server errors clearly", async () => {
   reset();
   fakeWorkbook({ cell: aCell, shapes: [aShape] });
-  await assert.rejects(AI.app.runExtractImage(), /locked/i);
+  await assert.rejects(AI.app.runExtractImage(), /own AI key/i);
   unlocked();
   fakeWorkbook({ cell: aCell, shapes: [] });
   await assert.rejects(AI.app.runExtractImage(), /no picture on this sheet/i);
@@ -353,7 +353,7 @@ test("diagnostics list what Excel supports, run one model call on request and ne
           assert.match(report, /PASS {2}ExcelApi 1\.9/);
           assert.match(report, /FAIL {2}ExcelApi 1\.10/);
           assert.match(report, /PASS {2}Service health and secrets configured/);
-          assert.match(report, /PASS {2}Unlocked/);
+          assert.match(report, /PASS {2}Ready to answer/);
           assert.match(report, /PASS {2}Model test \(1 call, \d+\.\d s\)/);
           assert.equal(calls.filter((c) => c.url.endsWith("/api/ai")).length, 1, "exactly one model call");
           assert.ok(!report.includes("SECRET-TOKEN-123"));
@@ -369,10 +369,10 @@ test("diagnostics without the model test makes no model call, and a locked helpe
     async (calls) => {
       const report = await AI.app.runDiagnostics(false);
       assert.match(report, /FAIL {2}Service health and secrets configured/);
-      assert.match(report, /FAIL {2}Locked/);
+      assert.match(report, /FAIL {2}No AI key saved and no owner sign in/);
       assert.equal(calls.filter((c) => c.url.endsWith("/api/ai")).length, 0);
       const locked = await AI.app.runDiagnostics(true);
-      assert.match(locked, /FAIL {2}Model test.*skipped because it is locked/);
+      assert.match(locked, /FAIL {2}Model test.*skipped because no AI key is saved/);
     },
   );
 });
@@ -836,7 +836,7 @@ test("a question pasted as many rows works as a range, and blank rows around it 
 
 test("the speed test fires different questions at once and reports the total, fastest, slowest and average", async () => {
   reset();
-  await assert.rejects(AI.app.runSpeedTest(3), /locked/i);
+  await assert.rejects(AI.app.runSpeedTest(3), /own AI key/i);
   unlocked();
   let n = 0;
   await withFetch(

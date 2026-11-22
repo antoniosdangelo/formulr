@@ -25,7 +25,11 @@ for (const name of ["index.html", "install.html"]) {
     assert.match(t, /Add your AI key/);
     assert.match(t, /never uses anyone else's AI key/);
     assert.match(t, /Your key stays on your device/);
-    assert.match(t, /Supported providers/);
+    assert.match(t, /Get your AI key/);
+    assert.match(html, /id="get-key"/, "the key guide has an anchor the add-in links to");
+    assert.match(t, /Check key/);
+    assert.match(t, /This page never saves your key/);
+    assert.match(html, /href="https:\/\/console\.anthropic\.com\/settings\/keys"/);
     assert.match(t, /Anthropic \(Claude\)/);
     assert.match(t, /Google Gemini/);
     assert.match(t, /Questions/);
@@ -62,4 +66,20 @@ test("the add-in files are still there, untouched by the build", () => {
     assert.ok(fs.existsSync(new URL(f, pub)), f);
   }
   assert.match(read("taskpane.html"), /id="key-section"/);
+});
+
+test("the key guide checks keys through this site only and never stores them", () => {
+  const src = fs.readFileSync(new URL("../src/KeySetup.tsx", import.meta.url), "utf8");
+  assert.match(src, /fetch\("\/api\/key-check"/);
+  assert.doesNotMatch(src, /localStorage|sessionStorage|indexedDB|document\.cookie/, "the page keeps the key in memory only");
+  assert.doesNotMatch(src, /[?&]key=/, "the key never goes in an address");
+  const js = read("web/main.js");
+  assert.ok(js.includes("/api/key-check"), "the built script has the key check");
+});
+
+test("the add-in pane checks a key before saving it and links to the guide", () => {
+  const pane = read("taskpane.html");
+  assert.match(pane, /How do I get a key\?/);
+  assert.match(pane, /href="\/#get-key"/);
+  assert.match(read("app.js"), /AI\.checkKey\(/);
 });

@@ -132,6 +132,41 @@
     }
   }
 
+  // The provider a pasted key belongs to, from its first letters, or null if it is not clear.
+  function guessProvider(key) {
+    const k = String(key || "").trim();
+    if (k.startsWith("sk-ant-")) return "anthropic";
+    if (k.startsWith("AIza")) return "gemini";
+    return null;
+  }
+
+  // Asks the server whether a key works, before it is saved. The check lists the provider's models, so it spends nothing.
+  // Returns { ok: true } for a working key, { ok: false, rejected: true, message } for a key the provider refused,
+  // and { ok: false, rejected: false, message } when the check itself could not run.
+  async function checkKey(provider, key) {
+    const k = String(key || "").trim();
+    let res;
+    try {
+      res = await fetch(baseUrl() + "/api/key-check", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-formulr-provider": provider, "x-formulr-key": k },
+        body: "{}",
+      });
+    } catch {
+      return { ok: false, rejected: false, message: "Could not reach Formulr to check the key." };
+    }
+    let body = null;
+    try {
+      body = await res.json();
+    } catch {
+      /* no body */
+    }
+    if (res.ok && body && body.ok) return { ok: true };
+    const code = body && body.error;
+    const rejected = code === "key_rejected" || code === "bad_key" || code === "bad_provider";
+    return { ok: false, rejected: rejected, message: (body && body.message) || "The key could not be checked right now." };
+  }
+
   function keyHeaders() {
     const k = userKey();
     return k ? { "x-formulr-provider": k.provider, "x-formulr-key": k.key } : {};
@@ -578,6 +613,8 @@
   state.userKey = userKey;
   state.setUserKey = setUserKey;
   state.clearUserKey = clearUserKey;
+  state.checkKey = checkKey;
+  state.guessProvider = guessProvider;
   state.NEEDS_KEY = NEEDS_KEY;
   state.setToken = setToken;
   state.restore = restore;

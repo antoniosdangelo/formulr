@@ -104,7 +104,7 @@ setup.cmd, setup.sh, reset-key.cmd   one click launchers, kept at the top so use
 ```
 Branches: `main` is the working version, new work goes to `sandbox` first. See [BRANCHING.md](BRANCHING.md).
 Turn on the safety hooks once per clone: `git config core.hooksPath .githooks`
-Settings for local runs go in `backend/.dev.vars` (never committed), see `backend/.dev.vars.example`.
+Settings for local runs go in `backend/.env` (never committed), see `backend/.env.example`.
 
 
 ## License and notices

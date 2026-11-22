@@ -14,4 +14,10 @@ backend/knowledge/*
 
 # Tests that depend on private knowledge packs
 backend/test/*.private.test.mjs
-!.dev.vars.example
+
+# Local settings and secrets: only the .example files are committed
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*

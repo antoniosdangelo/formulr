@@ -38,6 +38,31 @@
     }
   }
 
+  function updateKeyUi() {
+    const note = $("key-note");
+    if (!note) return;
+    const k = AI.userKey();
+    if (k) {
+      if ($("ai-provider")) $("ai-provider").value = k.provider;
+      note.textContent = "Saved on this device: " + (k.provider === "anthropic" ? "Anthropic" : "Gemini") + " key ending in " + k.key.slice(-4) + ".";
+    } else {
+      note.textContent = AI.role === "owner" ? "No key saved. Your owner pass uses the service's own key." : "No key saved yet. Answers need your own key.";
+    }
+  }
+
+  function onSaveKey() {
+    const input = $("ai-key");
+    const key = input.value;
+    input.value = "";
+    try {
+      AI.setUserKey($("ai-provider").value, key);
+      setStatus("Key saved on this device.", "ok");
+    } catch (err) {
+      setStatus(err.message, "error");
+    }
+    updateKeyUi();
+  }
+
   async function onUnlock() {
     const input = $("code");
     const code = input.value;
@@ -47,11 +72,17 @@
     try {
       const remember = Boolean($("remember") && $("remember").checked);
       await AI.unlock(code, remember);
-      setStatus((AI.remembered ? "Unlocked and remembered on this device." : "Unlocked for 2 hours.") + " Type =FORMULR.ANSWER(cell) next to a question.", "ok");
+      const needKey = AI.role !== "owner" && !AI.userKey();
+      setStatus(
+        (AI.remembered ? "Unlocked and remembered on this device." : "Unlocked for 2 hours.") +
+          (needKey ? " Now add your own AI key below." : " Type =FORMULR.ANSWER(cell) next to a question."),
+        "ok",
+      );
     } catch (err) {
       setStatus(err.message, "error");
     }
     updateLockUi();
+    updateKeyUi();
   }
 
   // The server accepts pictures up to 5 MB. A large screenshot is shrunk first (longest side 2000 px, JPEG), which keeps text readable.
@@ -521,6 +552,9 @@
       add(false, "Service health", "could not reach the service");
     }
     add(AI.isUnlocked(), AI.isUnlocked() ? "Unlocked" : "Locked (enter the access code, then run again)");
+    // Says only whether a key is saved and for which provider, never the key.
+    const k = AI.userKey && AI.userKey();
+    add(Boolean(k) || AI.role === "owner", k ? "Own AI key saved (" + k.provider + ")" : AI.role === "owner" ? "Owner pass, using the service key" : "No AI key saved (add yours in the pane)");
     if (testModel) {
       if (!AI.isUnlocked()) {
         add(false, "Model test", "skipped because it is locked");
@@ -600,6 +634,14 @@
   // Buttons are wired immediately so Unlock always works, even if Office.js is slow or blocked.
   function wireUi() {
     $("unlock").addEventListener("click", onUnlock);
+    if ($("save-key")) $("save-key").addEventListener("click", onSaveKey);
+    if ($("remove-key"))
+      $("remove-key").addEventListener("click", () => {
+        AI.clearUserKey();
+        setStatus("Key removed from this device.", "");
+        updateKeyUi();
+      });
+    updateKeyUi();
     $("code").addEventListener("keydown", (e) => {
       if (e.key === "Enter") onUnlock();
     });

@@ -27,6 +27,23 @@
       </section>
 
       <section>
+        <h2>Your AI key</h2>
+        <p class="hint">Formulr runs on your own AI account. Pick your provider and paste your key once. It stays on this device only and is sent over a secure connection with each answer. It is never saved on the server.</p>
+        <label for="ai-provider">Provider</label>
+        <select id="ai-provider">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="gemini">Google Gemini</option>
+        </select>
+        <label for="ai-key">API key</label>
+        <div class="row">
+          <input id="ai-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key" />
+          <button id="save-key" type="button">Save key</button>
+        </div>
+        <p class="hint" id="key-note"></p>
+        <button id="remove-key" type="button" class="secondary">Remove key</button>
+      </section>
+
+      <section>
         <h2>Formula</h2>
         <p>Type <code>=FORMULR.ANSWER(B2)</code> in the cell next to a question. You get just the answer in that one cell. For multiple choice it always picks one option, the closest if none match exactly.</p>
         <p class="hint">Add text after it for an instruction, like <code>=FORMULR.ANSWER(B2, "in Spanish")</code>. A range such as <code>B2:F9</code> works for a pasted block.</p>

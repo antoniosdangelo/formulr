@@ -1,0 +1,42 @@
+name: deploy
+# A merge into main goes live. Only Antonio merges into main, so that merge is his go.
+# Needs two repository secrets that only Antonio sets (never in code):
+#   CLOUDFLARE_API_TOKEN   from the "Edit Cloudflare Workers" token template
+#   CLOUDFLARE_ACCOUNT_ID  the Cloudflare account id
+# Without them the job skips itself and nothing is deployed.
+# Worker secrets (API keys) stay stored in Cloudflare and are not touched by a deploy.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      READY: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    steps:
+      - name: Skip when the Cloudflare secrets are not set
+        if: env.READY != 'true'
+        run: echo "Cloudflare secrets are not set, nothing deployed."
+      - uses: actions/checkout@v4
+        if: env.READY == 'true'
+      - uses: actions/setup-node@v4
+        if: env.READY == 'true'
+        with:
+          node-version: 22
+      - name: Install and test
+        if: env.READY == 'true'
+        run: |
+          npm ci --prefix backend
+          npm test --prefix backend
+      - name: Deploy
+        if: env.READY == 'true'
+        working-directory: backend
+        run: npm run deploy

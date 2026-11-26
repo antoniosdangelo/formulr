@@ -6,6 +6,8 @@
 <link rel="stylesheet" href="/web/main.css" />
 <style>
   html, body { margin: 0; background: #fff; }
+  /* Frames are drawn one by one, so the site's CSS animations would restart on every frame. Keep them off here. */
+  #stage * { animation: none !important; }
   #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; background: #fff; font-family: "Segoe UI", system-ui, sans-serif; color: #16191a; }
   .card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: none; }
   .card .logo { width: 64px; height: 64px; border-radius: 14px; margin-bottom: 22px; }
@@ -75,7 +77,6 @@ function sheet(o) {
       let v = "";
       if (id === "B1") v = "<b>Question</b>";
       if (id === "C1") v = "<b>Answer</b>";
-      if (id === "D1") v = "<b>Why</b>";
       if (id === "B2" && o.q) v = `<span style="opacity:${o.qa}">${esc(Q)}</span>`;
       if (id === "B2" && o.paste) v += '<span class="xl-chip">Ctrl+V</span>';
       if (id === "C2") {
@@ -83,7 +84,6 @@ function sheet(o) {
         else if (o.thinking) v = '<span class="xl-busy">Thinking...</span>';
         else if (o.ans) v = `<strong class="xl-answer" style="opacity:${o.ansA}">${ANS}</strong>`;
       }
-      if (id === "D2" && o.ans) v = `<span class="xl-why" style="opacity:${o.ansA}">${esc(WHY)}</span>`;
       h += `<td class="${cls}">${v}</td>`;
     }
     h += "</tr>";

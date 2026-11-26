@@ -263,7 +263,6 @@ async function handleAi(request, env, url) {
   const creds = own ?? (role === "owner" ? serverCredentials(env) : null);
   if (!creds) throw new HttpError(403, "needs_key", "Add your own AI key in the Formulr pane to get answers.");
   const t0 = Date.now();
-  const payload = validatePayload(await readJsonLimited(request, LIMITS.maxBodyBytes));
   const limiter = limiterFor(env);
   const now = new Date();
   const minute = Math.floor(now.getTime() / 60000);
@@ -291,6 +290,8 @@ async function handleAi(request, env, url) {
     );
   }
   if ((await Promise.all(checks)).some((r) => !r.ok)) throw new HttpError(429, "quota", "Usage limit reached. Try again later.");
+  // Read the body only after the limits pass, so a caller over the limit cannot make the Worker read 8 MB first.
+  const payload = validatePayload(await readJsonLimited(request, LIMITS.maxBodyBytes));
   const t1 = Date.now();
   const call = creds.provider === "anthropic" ? callAnthropic : callGemini;
   let result = await call(env, payload, creds);

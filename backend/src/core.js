@@ -7,8 +7,6 @@ export const VERSION = "0.1.0";
 export const LIMITS = {
   maxInstruction: 2000,
   maxInput: 500000,
-  maxFields: 20,
-  maxFieldName: 80,
   maxImageBytes: 5 * 1024 * 1024,
   maxBodyBytes: 8 * 1024 * 1024,
   maxRows: 200,
@@ -136,17 +134,6 @@ export function validatePayload(body) {
       input: cleanText(body.input, LIMITS.maxInput, "input"),
     };
   }
-  if (mode === "extract") {
-    if (!Array.isArray(body.fields) || body.fields.length === 0 || body.fields.length > LIMITS.maxFields) {
-      throw new HttpError(400, "bad_request", `fields must list 1 to ${LIMITS.maxFields} names`);
-    }
-    const fields = body.fields.map((f) => cleanText(String(f ?? "").trim(), LIMITS.maxFieldName, "field name", { required: true }));
-    return {
-      mode,
-      fields,
-      input: cleanText(body.input, LIMITS.maxInput, "input", { required: true }),
-    };
-  }
   if (mode === "answer") {
     const out = {
       mode,
@@ -170,7 +157,7 @@ export function validatePayload(body) {
       image: { mime, data: image.data },
     };
   }
-  throw new HttpError(400, "bad_request", "mode must be ask, extract, answer, image or image_answer");
+  throw new HttpError(400, "bad_request", "mode must be ask, answer, image or image_answer");
 }
 
 // ---------- Gemini request and result handling ----------
@@ -197,7 +184,6 @@ const SCHEMAS = {
   answer: ANSWER_SCHEMA,
   image_answer: ANSWER_SCHEMA,
   ask: { type: "OBJECT", properties: { answer: { type: "STRING" } }, required: ["answer"] },
-  extract: { type: "OBJECT", properties: { values: { type: "ARRAY", items: { type: "STRING" } } }, required: ["values"] },
   image: {
     type: "OBJECT",
     properties: {
@@ -215,12 +201,6 @@ function buildPromptParts(p) {
   const parts = [];
   if (p.mode === "ask") {
     parts.push({ text: `INSTRUCTION:\n${p.instruction}\n\n<input>\n${neutralize(p.input)}\n</input>` });
-  } else if (p.mode === "extract") {
-    parts.push({
-      text:
-        `INSTRUCTION:\nFrom the input, extract these fields in this exact order: ${p.fields.map((f, i) => `${i + 1}. ${f}`).join("; ")}. ` +
-        `Return exactly ${p.fields.length} values. Use an empty string when a field is not present. Do not guess.\n\n<input>\n${neutralize(p.input)}\n</input>`,
-    });
   } else if (p.mode === "answer") {
     parts.push({
       text:
@@ -289,7 +269,7 @@ export function needsCare(p) {
 }
 
 export function buildAnthropicBody(p, model, packs = PACKS) {
-  // Questions get the model's real, built in thinking so the answer comes after the reasoning. Mechanical jobs (extract, read a picture) do not need it.
+  // Questions get the model's real, built in thinking so the answer comes after the reasoning. Reading a picture into rows does not need it.
   const thinks = p.mode === "answer" || p.mode === "image_answer" || p.mode === "ask";
   const content = buildPromptParts(p).map((part) =>
     part.inlineData
@@ -304,7 +284,7 @@ export function buildAnthropicBody(p, model, packs = PACKS) {
     output_config: { effort: p.careful || needsCare(p) ? "medium" : "low", format: { type: "json_schema", schema: toJsonSchema(SCHEMAS[p.mode]) } },
   };
   if (thinks) return body; // thinking stays on (adaptive); the effort level sets how much
-  // Mechanical modes: turn thinking off where the model allows. Haiku accepts "disabled", Sonnet 5.5 uses "between_tools" (its form of off). Opus always thinks.
+  // The mechanical mode (read a picture into rows): turn thinking off where the model allows. Haiku accepts "disabled", Sonnet 5.5 uses "between_tools" (its form of off). Opus always thinks.
   if (/^claude-haiku/.test(model)) body.thinking = { type: "disabled" };
   else if (/^claude-sonnet-5-5/.test(model)) body.thinking = { type: "between_tools" };
   return body;
@@ -355,11 +335,6 @@ export function normalizeResult(p, parsed) {
   if (p.mode === "answer" || p.mode === "image_answer") {
     if (typeof parsed.answer !== "string" || !parsed.answer.trim()) throw new HttpError(502, "bad_provider_output", "Provider returned no answer");
     return { answer: clip(parsed.answer, LIMITS.maxCell), explanation: clip(typeof parsed.explanation === "string" ? parsed.explanation : "", LIMITS.maxCell) };
-  }
-  if (p.mode === "extract") {
-    if (!Array.isArray(parsed.values)) throw new HttpError(502, "bad_provider_output", "Provider returned no values");
-    const values = p.fields.map((_, i) => clip(parsed.values[i], LIMITS.maxCell));
-    return { values };
   }
   if (!Array.isArray(parsed.rows)) throw new HttpError(502, "bad_provider_output", "Provider returned no rows");
   const rows = parsed.rows

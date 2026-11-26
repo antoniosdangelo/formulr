@@ -20,10 +20,10 @@ export function renderManifest(origin, addInId = ADD_IN_ID) {
   <ProviderName>Formulr</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Formulr"/>
-  <Description DefaultValue="AI formulas for Excel: =FORMULR.ANSWER(B2) answers any text or range and explains it, =FORMULR.ASK follows your instruction, =FORMULR.EXTRACT pulls fields from text. Works with any length and format."/>
+  <Description DefaultValue="AI answers in Excel: =FORMULR.ANSWER(B2) answers the question in any cell or range, on your own AI key. Works with any length and format."/>
   <IconUrl DefaultValue="${o}/icon-32.png?v=2"/>
   <HighResolutionIconUrl DefaultValue="${o}/icon-80.png?v=2"/>
-  <SupportUrl DefaultValue="${o}/index.html"/>
+  <SupportUrl DefaultValue="https://formulr.dev"/>
   <AppDomains>
     <AppDomain>${o}</AppDomain>
   </AppDomains>
@@ -120,7 +120,7 @@ export function renderManifest(origin, addInId = ADD_IN_ID) {
       <bt:Urls>
         <bt:Url id="Functions.Script.Url" DefaultValue="${o}/functions.js"/>
         <bt:Url id="Functions.Metadata.Url" DefaultValue="${o}/functions.json"/>
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="${o}/index.html"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://formulr.dev"/>
         <bt:Url id="Taskpane.Url" DefaultValue="${o}/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>

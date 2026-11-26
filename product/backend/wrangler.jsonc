@@ -5,7 +5,7 @@
   // House standard: Formulr runs wrangler dev on 8793 (Vite uses 5175).
   "dev": { "port": 8793 },
   "assets": {
-    "directory": "../frontend/public",
+    "directory": "../../frontend/public",
     "binding": "ASSETS",
     "html_handling": "none",
     "not_found_handling": "none",

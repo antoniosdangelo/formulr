@@ -35,8 +35,15 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # No review token set yet: skip quietly instead of failing every PR (same idea as live-check.yml).
+    env:
+      HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     steps:
+      - name: Skip when the review token is not set
+        if: env.HAS_TOKEN != 'true'
+        run: echo "CLAUDE_CODE_OAUTH_TOKEN is not set, no review this time."
       - uses: actions/checkout@v4
+        if: env.HAS_TOKEN == 'true'
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -44,6 +51,7 @@ jobs:
       # Pinned to a commit SHA, not a tag. This is anthropics/claude-code-action v1.0.269
       # (published 2026-11-06). To update, pick a release over 2 weeks old and paste its commit SHA.
       - uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269
+        if: env.HAS_TOKEN == 'true'
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true

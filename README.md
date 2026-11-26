@@ -2,7 +2,7 @@
 
 AI answers inside your Excel formulas, on **your own** AI key. Live site: **https://formulr.dev**
 
-Paste a question into B2, type `=FORMULR.ANSWER(B2)` in C2, and the answer fills C2 with a one line explanation in D2.
+Paste a question into B2, type `=FORMULR.ANSWER(B2)` in C2, and the answer fills C2.
 
 ## What you need
 - **Excel on the web** (free with any Microsoft account), or **Microsoft 365 Excel** on Windows or Mac. Older boxed versions such as Excel 2016 and 2019 do not run this kind of add-in. Desktop and Mac are less tested than the web.
@@ -24,16 +24,18 @@ The site has a guided **Get your AI key** box that checks your key works before 
 3. Click **Formulr** on the Home tab. No sign up and no access code are needed.
 4. Under **Your AI key**, pick Anthropic or Gemini, paste **your own** key and press **Save key**. Formulr checks it with your provider before saving it.
 
+Moving from the old `workers.dev` address to formulr.dev? Upload the new add-in file and paste your key once more, since each address keeps its own saved key.
+
 Nothing to install on your laptop, and no GitHub or Cloudflare account.
 
 ## First use
 1. Type or paste a question into **B2**.
 2. In **C2** type `=FORMULR.ANSWER(B2)` and press Enter.
-3. The answer appears in C2 and a short explanation in D2. Keep D2 empty so it has room.
+3. The answer appears in C2, just the answer, in one cell.
 
 | Formula | What it does |
 |---|---|
-| `=FORMULR.ANSWER(B2)` | The answer in one cell and a short explanation in the next. For multiple choice the answer is the option letter, and it always commits to one option. Takes a cell, a whole range, or text of any length. Add a second argument for an instruction, like `=FORMULR.ANSWER(B2, "in Spanish")`. |
+| `=FORMULR.ANSWER(B2)` | The answer, in one cell. For multiple choice the answer is the option letter, and it always commits to one option. Takes a cell, a whole range, or text of any length. Add a second argument for an instruction, like `=FORMULR.ANSWER(B2, "in Spanish")`. |
 
 `FORMULR.ANSWER` is the only function. The side bar can also answer selected cells without a formula and read a floating picture (click it, then press **Answer picture**). **Tidy** and **Expand** on the Home tab keep long question cells to one line and bring the full text back. They change only how cells look.
 
@@ -67,7 +69,6 @@ Full guide and settings: [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md). Private ref
 | `#NAME?` | Wait a minute and reload the workbook. If it stays, remove older Formulr entries in Manage My Add-ins and upload the file again. |
 | "Add your own AI key" | Click Formulr on the Home tab and save your key. |
 | `#N/A` about the AI provider | Wrong key, no credit, or a retired model. Check the key and your credit with the provider. |
-| `#SPILL!` | The cell to the right is not empty. Clear it. |
 | "Usage limit reached" | Wait a minute and try again. |
 | Formulr is missing on another laptop | An uploaded add-in is remembered per browser. Upload the file again there. |
 

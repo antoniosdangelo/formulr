@@ -64,10 +64,10 @@ In C2 type:
 =FORMULR.ANSWER(B2)
 ```
 
-The answer fills C2 and a short explanation fills D2. Keep C2 and D2 empty first, or Excel shows `#SPILL!`.
+The answer fills C2, just the answer, in one cell.
 
 Good habits
-- Want it tidy? `=FORMULR.ANSWER(B2)` gives only the answer in one cell. Pasting a long multi-line question? Two clean ways:
+- Pasting a long multi-line question? Two clean ways:
   - Click the cell, press **F2**, paste, press Enter: the whole text goes into one cell. To stop Excel growing the row, select that cell once and click **Tidy** on the ribbon (Home tab, Formulr group). **Expand** shows the full text again. They only change how cells look, never what is in them, and nothing happens automatically.
   - Or just paste onto the cell (Excel puts each line in its own row) and point the formula at the block with room to spare, such as `=FORMULR.ANSWER(A1:A40)`. Blank rows around the text are ignored.
 - To answer many questions quickly, put one question per row and fill the formula down. Up to eight are asked at the same time. **Speed test (6 calls)** in the side bar shows how long a batch takes on your setup.
@@ -101,7 +101,6 @@ Alternatively you can share your address and access code with someone you trust.
 | `#VALUE!` with "The AI declined this input" | The AI refused that text | Reword the question |
 | `#N/A` with a message about the AI provider | Wrong key, no credit, or a retired model | Check your key and credit. Run `setup --reset-key`. Check the model name |
 | "Usage limit reached" | You hit your own daily or per minute limit | Wait, or raise `AI_PER_DAY` / `AI_PER_MINUTE` and run the setup |
-| `#SPILL!` | The cells to the right are not empty | Clear them |
 | Setup stops with red text | Usually a login or a typo in the key | Read the message, fix, run the setup again. It is safe to repeat |
 
 In the side bar, **Run checks**, **Test the AI** and **Run full self-test** show what your Excel supports and whether everything works. Copy the report if you open an issue. It never contains your access code.

@@ -47,7 +47,7 @@ test("a saved key is sent in headers on each answer, never in the body or the UR
     await withFetch(
       () => reply({ answer: "4", explanation: "2 plus 2." }),
       async (calls) => {
-        await AI.functions.answer("What is 2 + 2?");
+        await AI.functions.one("What is 2 + 2?");
         assert.equal(calls.length, 1);
         assert.equal(calls[0].headers["x-formulr-key"], USER_KEY);
         assert.equal(calls[0].headers["x-formulr-provider"], "anthropic");
@@ -66,7 +66,7 @@ test("with no saved key no key headers are sent, and the server's needs_key repl
     await withFetch(
       () => reply({ error: "needs_key", message: "Add your own AI key" }, 403),
       async (calls) => {
-        await assert.rejects(AI.functions.answer("What is 2 + 2?"), (err) => err.message === AI.NEEDS_KEY);
+        await assert.rejects(AI.functions.one("What is 2 + 2?"), (err) => err.message === AI.NEEDS_KEY);
         assert.equal(calls[0].headers["x-formulr-key"], undefined);
       },
     );
@@ -121,7 +121,7 @@ test("with a saved key and no sign in, answers go out with the key and no pass",
     await withFetch(
       () => reply({ answer: "4", explanation: "2 plus 2." }),
       async (calls) => {
-        await AI.functions.answer("What is 2 + 2?");
+        await AI.functions.one("What is 2 + 2?");
         assert.equal(calls.length, 1);
         assert.equal(calls[0].headers.authorization, undefined);
         assert.equal(calls[0].headers["x-formulr-key"], USER_KEY);
@@ -140,7 +140,7 @@ test("with no key and no sign in, nothing is sent and the message asks for a key
     await withFetch(
       () => reply({ answer: "x" }),
       async (calls) => {
-        await assert.rejects(AI.functions.answer("What is 2 + 2?"), (err) => err.message === AI.NEEDS_KEY);
+        await assert.rejects(AI.functions.one("What is 2 + 2?"), (err) => err.message === AI.NEEDS_KEY);
         assert.equal(calls.length, 0);
       },
     );

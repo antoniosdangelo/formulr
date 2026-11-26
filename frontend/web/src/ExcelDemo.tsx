@@ -57,6 +57,8 @@ const ROWS = [1, 2, 3, 4, 5, 6];
 
 export default function ExcelDemo() {
   const [f, setF] = useState<Frame>(FINAL);
+  // null until the browser says motion is fine; then the visitor can pause it (WCAG 2.2.2).
+  const [playing, setPlaying] = useState<boolean | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   // The selection box is one element that glides from cell to cell, like Excel. Without JavaScript the cell outline shows instead.
   const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -74,8 +76,14 @@ export default function ExcelDemo() {
   }, [f.sel, f.question]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) setPlaying(true);
+  }, []);
+
+  useEffect(() => {
+    if (!playing) {
+      setF(FINAL);
+      return;
+    }
     let timers: number[] = [];
     const run = () => {
       let frame = { ...START };
@@ -89,7 +97,7 @@ export default function ExcelDemo() {
     };
     run();
     return () => timers.forEach((t) => window.clearTimeout(t));
-  }, []);
+  }, [playing]);
 
   const typedText = FORMULA.slice(0, f.typed);
   const showAuto = f.editing && f.typed >= 4 && f.typed < 16;
@@ -129,6 +137,11 @@ export default function ExcelDemo() {
         <span>Book1</span>
         <span className="xl-title-right">Formulr demo</span>
       </div>
+      {playing !== null && (
+        <button type="button" className="xl-pause" onClick={() => setPlaying(!playing)} aria-pressed={!playing}>
+          {playing ? "Pause demo" : "Play demo"}
+        </button>
+      )}
       <div className="xl-tabs" aria-hidden="true">
         {["File", "Home", "Insert", "Formulas", "Data", "View"].map((t) => (
           <span key={t} className={t === "Home" ? "on" : ""}>

@@ -289,3 +289,17 @@ test("the limit tags in the database never contain the key", async () => {
   assert.ok(!seen.includes(USER_AKEY));
   assert.ok(!seen.includes(USER_AKEY.slice(-12)), "not even part of the key");
 });
+
+test("a caller over the limit is refused before the body is read", async () => {
+  const env = envWith({ GUEST_PER_MINUTE: "1" });
+  const key = { "x-formulr-provider": "anthropic", "x-formulr-key": USER_AKEY, "cf-connecting-ip": "203.0.113.250" };
+  await watch(claudeOk, async (calls) => {
+    assert.equal((await ask(env, key)).status, 200);
+    const over = await worker.fetch(
+      new Request(ORIGIN + "/api/ai", { method: "POST", headers: { "content-type": "application/json", origin: ORIGIN, ...key }, body: "not json at all" }),
+      env,
+    );
+    assert.equal(over.status, 429, "the limit answers first; a broken body would otherwise get 400");
+    assert.equal(calls.length, 1);
+  });
+});

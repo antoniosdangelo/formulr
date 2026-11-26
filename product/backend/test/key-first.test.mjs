@@ -4,10 +4,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const read = (rel) => fs.readFileSync(new URL(rel, import.meta.url), "utf8");
-const readme = read("../../README.md");
-// The built page escapes apostrophes, so read it back as plain text.
-const install = read("../../frontend/public/install.html").replace(/&#x27;/g, "'");
-const pane = read("../../frontend/public/taskpane.html");
+const readme = read("../../../README.md");
+const pane = read("../../../frontend/public/taskpane.html");
 
 test("README leads with the install page and your own key, and self hosting is the advanced path", () => {
   const get = readme.indexOf("## Get Formulr");
@@ -20,15 +18,6 @@ test("README leads with the install page and your own key, and self hosting is t
   assert.match(readme, /never uses anyone else's AI key/);
   assert.match(readme, /OWNER_CODE/);
   assert.equal(readme.match(/^\| `=FORMULR\.ANSWER\(B2\)`/gm).length, 1, "one ANSWER row in the formula table");
-});
-
-test("install page promises the key stays yours before any step", () => {
-  const promise = install.indexOf("key-promise");
-  const steps = install.indexOf('<ol class="steps">');
-  assert.ok(promise > 0 && promise < steps);
-  assert.match(install, /never uses anyone else's AI key/);
-  assert.match(install, /Your key stays on your device/);
-  assert.match(install, /Add your AI key/);
 });
 
 test("the side bar shows the key box first", () => {

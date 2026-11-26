@@ -16,6 +16,6 @@ if errorlevel 1 (
   pause
   exit /b 0
 )
-node backend\scripts\setup.mjs %*
+node product\backend\scripts\setup.mjs %*
 echo.
 pause

@@ -4,14 +4,14 @@ Every pull request names its owner agent, so you always know which chat to open.
 
 | Part | Owner agent |
 |---|---|
-| `backend/` | Formulr Builder |
-| `frontend/` | Formulr Builder |
+| `product/backend/` | Formulr Builder |
+| `product/frontend/` | Formulr Builder |
 | `docs/` | Formulr Builder |
 | repo setup (.github/, .env layout, BRANCHING, AGENTS) | Orchestrator |
 
 ## How to open an agent
-- In VS Code (folder `C:\Dev\Claude Code`): Ctrl+Shift+P, "Tasks: Run Task", then **Agent: Formulr Builder** (or **Agent: Orchestrator**).
-- The chat ids are in this project's local `.env` under CLAUDE CHATS.
+- In VS Code (the workspace folder): Ctrl+Shift+P, "Tasks: Run Task", then **Agent: Formulr Builder** (or **Agent: Orchestrator**).
+- The chat ids are in this project's local `.env` under AGENT CHATS.
 
 ## Labels on GitHub
 - `agent: ...` says who owns the pull request.

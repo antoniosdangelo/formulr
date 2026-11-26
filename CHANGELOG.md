@@ -23,5 +23,8 @@ Live at https://excel-ai-helper.comprsly-antonio.workers.dev, deployed from `mai
 - **Checks.** Pull requests run tests, a web build diff and a secret scan. A scheduled live check runs the public smoke test every 6 hours once the `FORMULR_URL` repository secret is set.
 - **Open.** Nobody has run a real answer with a real key in real Excel since these changes, so do that first. Cloudflare cleanup is owned by the Orchestrator: the old `excel-ai-cells` copy still gets traffic, plus the TipNudge zone and the account workers.dev rename. Next level ideas are a Microsoft Marketplace listing, an OpenAI provider, and more testing on desktop Excel and Mac.
 
+## November 26, 2026: formulr.dev
+- The app now lives at https://formulr.dev, attached to the same Worker as a custom domain. The old workers.dev address keeps working, so add-ins installed from it keep answering. The domain is set only in the owner's local `backend/wrangler.jsonc`, so self hosted copies are not affected.
+
 ## How updates work from now on
 New work goes to `sandbox` first, gets tested, and only then is merged into `main` (production) when the owner approves. See `BRANCHING.md`.

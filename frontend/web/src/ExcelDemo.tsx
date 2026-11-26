@@ -10,7 +10,6 @@ const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayout
 const QUESTION = "A train leaves at 3:15 PM and drives 180 miles at 60 mph. When does it arrive?";
 const FORMULA = "=FORMULR.ANSWER(B2)";
 const ANSWER = "6:15 PM";
-const WHY = "180 miles at 60 mph takes 3 hours, so 3:15 PM plus 3 hours.";
 
 type Frame = {
   sel: string; // selected cell, like "C2"
@@ -111,10 +110,8 @@ export default function ExcelDemo() {
   const cell = (id: string) => {
     if (id === "B1") return <b>Question</b>;
     if (id === "C1") return <b>Answer</b>;
-    if (id === "D1") return <b>Why</b>;
     if (id === "B2") return f.question ? <span className={f.pasteHint ? "" : "xl-fade"}>{QUESTION}</span> : null;
     if (id === "C2") return c2;
-    if (id === "D2") return f.answered ? <span className="xl-fade xl-why">{WHY}</span> : null;
     return null;
   };
 

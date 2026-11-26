@@ -64,7 +64,7 @@ main > section.hero { text-align: center; padding-top: 64px; margin-top: 0; }
 .lead { font-size: 1.15rem; color: var(--muted); max-width: 40rem; margin: 0 auto 24px; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 40px; }
 
-.key-promise { margin: 0 0 32px; padding: 14px 18px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-weight: 500; }
+.key-promise { margin: 0 0 32px; padding: 14px 18px; border: 1px solid #cfe5d8; background: var(--accent-soft); border-radius: 10px; font-weight: 500; }
 
 .steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .steps li { counter-increment: step; border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: #fff; transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), transform 0.2s var(--ease); }
@@ -109,7 +109,11 @@ main > section.hero { text-align: center; padding-top: 64px; margin-top: 0; }
 .xl-title { display: flex; align-items: center; gap: 12px; height: 34px; padding: 0 12px; background: #217346; color: #fff; font-size: 12.5px; }
 .xl-dots { display: flex; gap: 6px; }
 .xl-dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.45); }
-.xl-title-right { margin-left: auto; opacity: 0.85; }
+.xl-title-right { margin-left: auto; margin-right: 92px; opacity: 0.85; }
+.xl { position: relative; }
+.xl-pause { position: absolute; top: 5px; right: 8px; z-index: 5; height: 24px; padding: 0 10px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 6px; background: transparent; color: #fff; font: 600 12px/1 "Segoe UI", system-ui, sans-serif; cursor: pointer; transition: background-color 0.15s ease; }
+.xl-pause:hover { background: rgba(255, 255, 255, 0.16); }
+.xl-pause:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .xl-tabs { display: flex; gap: 18px; padding: 6px 14px 0; background: #f3f3f3; font-size: 12.5px; color: #444; }
 .xl-tabs span { padding-bottom: 6px; }
 .xl-tabs .on { color: #217346; font-weight: 600; border-bottom: 3px solid #217346; }

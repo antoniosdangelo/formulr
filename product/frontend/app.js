@@ -618,7 +618,7 @@
   }
 
   // Where a second laptop gets the add-in. Uses the clipboard when the host allows it, and a hidden text box otherwise.
-  const installLink = () => ((root.location && root.location.origin) || AI.base || "") + "/install";
+  const installLink = () => "https://formulr.dev/install"; // the install guide lives on the website
 
   async function copyText(text) {
     try {

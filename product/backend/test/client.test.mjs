@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 // functions.js and app.js attach to globalThis, as they do inside Excel's shared runtime.
-await import("../../frontend/public/functions.js");
+await import("../../../frontend/public/functions.js");
 const AI = globalThis.AIHelper;
 AI.base = "https://helper.test";
 AI.retryDelaysMs = [];
@@ -16,7 +16,7 @@ globalThis.Office = {
   addin: { showAsTaskpane: async () => void officeCalls.shown++ },
   onReady: () => {},
 };
-await import("../../frontend/public/app.js");
+await import("../../../frontend/public/app.js");
 
 const unlocked = () => AI.setToken("tok", 3600);
 const reset = () => {
@@ -52,15 +52,6 @@ test("escapeCell blocks formula injection but keeps real numbers", () => {
   for (const keep of ["-12.5", "+3", "1,234.50", "-7%", "hello", "-", ""]) assert.equal(escapeCell(keep), keep);
   assert.equal(escapeCell(null), "");
   assert.equal(escapeCell("x".repeat(40000)).length, 32000);
-});
-
-test("normalizeFields accepts ranges, comma text and drops blanks", () => {
-  const { normalizeFields } = AI.util;
-  assert.deepEqual(normalizeFields([["name", "date", "amount"]]), ["name", "date", "amount"]);
-  assert.deepEqual(normalizeFields([["name, date; amount"]]), ["name", "date", "amount"]);
-  assert.deepEqual(normalizeFields([["a", "", " b "]]), ["a", "b"]);
-  assert.deepEqual(normalizeFields("x, y"), ["x", "y"]);
-  assert.deepEqual(normalizeFields([[""]]), []);
 });
 
 test("findPictureForCell picks the one picture anchored in the cell", () => {
@@ -138,19 +129,10 @@ test("a failed call is not cached and a 401 locks the helper", async () => {
   );
 });
 
-test("ask validates its inputs and extract spills one row", async () => {
+test("ask validates its inputs", async () => {
   reset();
   unlocked();
   await assert.rejects(AI.functions.ask("  ", "x"), (e) => e.kind === "invalidValue");
-  await assert.rejects(AI.functions.extract("", [["a"]]), (e) => e.kind === "invalidValue");
-  await assert.rejects(AI.functions.extract("text", [[""]]), (e) => e.kind === "invalidValue");
-  await withFetch(
-    () => reply({ values: ["Ada", "42"] }),
-    async (calls) => {
-      assert.deepEqual(await AI.functions.extract("Ada owes 42", [["name", "amount"]]), [["Ada", "42"]]);
-      assert.deepEqual(calls[0].body, { mode: "extract", input: "Ada owes 42", fields: ["name", "amount"] });
-    },
-  );
 });
 
 test("no more than eight requests are ever in flight, and a filled down column really does run in parallel", async () => {
@@ -475,21 +457,21 @@ test("a server 401 on a remembered pass forgets it, and unusable storage never b
   }
 });
 
-// ---------- answer + explanation ----------
+// ---------- the formula ----------
 
-test("FORMULR.ANSWER spills the answer and the explanation across one row and caches by input", async () => {
+test("FORMULR.ANSWER returns the answer and caches by input", async () => {
   reset();
   unlocked();
   await withFetch(
     () => reply({ answer: "Paris", explanation: "It is the capital of France." }),
     async (calls) => {
-      assert.deepEqual(await AI.functions.answer("Capital of France?"), [["Paris", "It is the capital of France."]]);
-      await AI.functions.answer("Capital of France?");
+      assert.equal(await AI.functions.one("Capital of France?"), "Paris");
+      await AI.functions.one("Capital of France?");
       assert.equal(calls.length, 1);
-      await AI.functions.answer("Capital of France?", "in Spanish");
+      await AI.functions.one("Capital of France?", "in Spanish");
       assert.equal(calls.length, 2, "a different instruction is a different question");
       assert.deepEqual(calls[1].body, { mode: "answer", input: "Capital of France?", instruction: "in Spanish" });
-      await assert.rejects(AI.functions.answer("   "), (e) => e.kind === "invalidValue");
+      await assert.rejects(AI.functions.one("   "), (e) => e.kind === "invalidValue");
     },
   );
 });
@@ -552,23 +534,22 @@ test("cell text with line breaks, tabs, emoji and markup is sent unchanged", asy
   await withFetch(
     () => reply({ answer: "a", explanation: "e" }),
     async (calls) => {
-      await AI.functions.answer([[odd]]);
+      await AI.functions.one([[odd]]);
       assert.equal(calls[0].body.input, odd);
     },
   );
 });
 
-test("a whole range can be the input to ANSWER, ASK and EXTRACT", async () => {
+test("a whole range can be the input to ANSWER and ASK", async () => {
   reset();
   unlocked();
   await withFetch(
-    (url, init) => reply(JSON.parse(init.body).mode === "extract" ? { values: ["x", "y"] } : { answer: "a", explanation: "e" }),
+    () => reply({ answer: "a", explanation: "e" }),
     async (calls) => {
       const range = [["Item", "Qty"], ["Pen", 2]];
-      await AI.functions.answer(range);
+      await AI.functions.one(range);
       await AI.functions.ask("Total?", range);
-      await AI.functions.extract(range, [["item", "qty"]]);
-      assert.deepEqual(calls.map((c) => c.body.input), ["Item\tQty\nPen\t2", "Item\tQty\nPen\t2", "Item\tQty\nPen\t2"]);
+      assert.deepEqual(calls.map((c) => c.body.input), ["Item\tQty\nPen\t2", "Item\tQty\nPen\t2"]);
     },
   );
 });
@@ -580,10 +561,10 @@ test("a 300000 character cell works, is cached by fingerprint, and one changed c
   await withFetch(
     () => reply({ answer: "a", explanation: "e" }),
     async (calls) => {
-      await AI.functions.answer(big);
-      await AI.functions.answer(big);
+      await AI.functions.one(big);
+      await AI.functions.one(big);
       assert.equal(calls.length, 1);
-      await AI.functions.answer(big.slice(0, -1) + "!");
+      await AI.functions.one(big.slice(0, -1) + "!");
       assert.equal(calls.length, 2, "a one character change is not served from the cache");
       for (const key of AI._cache.keys()) assert.ok(key.length < 200, "the cache never stores the full text");
     },
@@ -629,14 +610,14 @@ test("a busy service (429) is retried and then succeeds, so a filled column does
     await withFetch(
       (u, i, calls) => (calls.length < 3 ? reply({ error: "quota", message: "Usage limit reached." }, 429) : reply({ answer: "ok", explanation: "e" })),
       async (calls) => {
-        assert.deepEqual(await AI.functions.answer("q"), [["ok", "e"]]);
+        assert.equal(await AI.functions.one("q"), "ok");
         assert.equal(calls.length, 3);
       },
     );
     await withFetch(
       () => reply({ error: "quota", message: "Usage limit reached." }, 429),
       async (calls) => {
-        await assert.rejects(AI.functions.answer("q2"), /Usage limit/);
+        await assert.rejects(AI.functions.one("q2"), /Usage limit/);
         assert.equal(calls.length, 4, "gives up after the last retry");
       },
     );
@@ -660,8 +641,8 @@ test("a call that never answers times out, frees its slot, and the same formula 
     return Promise.resolve(reply({ answer: "ok", explanation: "e" }));
   };
   try {
-    for (let i = 0; i < 4; i++) await assert.rejects(AI.functions.answer("hang " + i), /Could not reach Formulr/);
-    assert.deepEqual(await AI.functions.answer("hang 0"), [["ok", "e"]], "the failure was not cached and no request slot leaked");
+    for (let i = 0; i < 4; i++) await assert.rejects(AI.functions.one("hang " + i), /Could not reach Formulr/);
+    assert.equal(await AI.functions.one("hang 0"), "ok", "the failure was not cached and no request slot leaked");
   } finally {
     globalThis.fetch = real;
     AI.attemptTimeoutMs = undefined;
@@ -682,7 +663,7 @@ test("a dropped connection or a 502 is retried quietly before the cell shows an 
       return reply({ answer: "ok", explanation: "e" });
     };
     try {
-      assert.deepEqual(await AI.functions.answer("flaky"), [["ok", "e"]]);
+      assert.equal(await AI.functions.one("flaky"), "ok");
       assert.equal(n, 3);
     } finally {
       globalThis.fetch = real;
@@ -696,7 +677,7 @@ test("a dropped connection or a 502 is retried quietly before the cell shows an 
 
 test("the side bar offers the install file and a copy link button that really copies", async () => {
   const fs = await import("node:fs");
-  const html = fs.readFileSync(new URL("../../frontend/public/taskpane.html", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../../../frontend/public/taskpane.html", import.meta.url), "utf8");
   assert.match(html, /<a class="button" id="dl-manifest" href="download"/);
   assert.match(html, /id="copy-link"/);
   const copied = [];
@@ -724,11 +705,11 @@ test("copying falls back to false when neither the clipboard nor the document is
 test("the pane loads Office.js from Microsoft, with a second address if the first is blocked", async () => {
   const fs = await import("node:fs");
   const vm = await import("node:vm");
-  const html = fs.readFileSync(new URL("../../frontend/public/taskpane.html", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../../../frontend/public/taskpane.html", import.meta.url), "utf8");
   const head = html.slice(html.indexOf("<head>"), html.indexOf("</head>"));
   assert.ok(head.indexOf("officeapis.public.onecdn.static.microsoft/1/office.js") < head.indexOf("office-fallback.js"), "fallback runs right after the first tag");
   assert.ok(html.indexOf("office-fallback.js") < html.indexOf('src="functions.js"'), "before any of our own scripts");
-  const src = fs.readFileSync(new URL("../../frontend/public/office-fallback.js", import.meta.url), "utf8");
+  const src = fs.readFileSync(new URL("../../../frontend/public/office-fallback.js", import.meta.url), "utf8");
   const run = (win) => vm.runInNewContext(src, win);
   const written = [];
   const blocked = { document: { write: (t) => written.push(t) } };
@@ -740,47 +721,6 @@ test("the pane loads Office.js from Microsoft, with a second address if the firs
   fine.window = fine;
   run(fine);
   assert.equal(written.length, 1, "nothing is added when Office.js already loaded");
-});
-
-test("FORMULR.CAREFUL asks for careful mode, spills answer and explanation, and waits longer than the fast formulas", async () => {
-  reset();
-  unlocked();
-  await withFetch(
-    () => reply({ answer: "$973.27", explanation: "Present value of the cash flows." }),
-    async (calls) => {
-      assert.deepEqual(await AI.functions.careful("price a 3 year 5% bond at 6%"), [["$973.27", "Present value of the cash flows."]]);
-      assert.equal(calls[0].body.careful, true);
-      assert.equal(calls[0].body.mode, "answer");
-      await AI.functions.careful("price a 3 year 5% bond at 6%");
-      assert.equal(calls.length, 1, "cached");
-      await AI.functions.answer("price a 3 year 5% bond at 6%");
-      assert.equal(calls.length, 2, "fast and careful answers are cached separately");
-      assert.equal(calls[1].body.careful, undefined);
-      await assert.rejects(AI.functions.careful("  "), (e) => e.kind === "invalidValue");
-    },
-  );
-});
-
-// ---------- answer only, and tidy view ----------
-
-test("FORMULR.SHORT returns just the answer as one value and asks for no explanation", async () => {
-  reset();
-  unlocked();
-  await withFetch(
-    () => reply({ answer: "B. 4.10%" }),
-    async (calls) => {
-      assert.equal(await AI.functions.short([["Which option?"], ["A) 4.04%"]]), "B. 4.10%");
-      assert.equal(calls[0].body.mode, "ask");
-      assert.equal(calls[0].body.input, "Which option?\nA) 4.04%");
-      assert.match(calls[0].body.instruction, /only the final answer.*no explanation/);
-      await AI.functions.short([["Which option?"], ["A) 4.04%"]]);
-      assert.equal(calls.length, 1, "cached");
-      await AI.functions.short([["Which option?"], ["A) 4.04%"]], "in Spanish");
-      assert.equal(calls.length, 2);
-      assert.match(calls[1].body.instruction, /no explanation\. in Spanish$/);
-      await assert.rejects(AI.functions.short("  "), (e) => e.kind === "invalidValue");
-    },
-  );
 });
 
 test("Tidy view keeps questions to one line and Expand brings the full text back, without touching the cell contents", async () => {
@@ -807,7 +747,7 @@ test("Tidy view keeps questions to one line and Expand brings the full text back
   await assert.rejects(AI.app.runCompact(true), /Select fewer cells/);
   assert.ok(!calls.some((c) => c[0] === "VALUES WRITTEN"));
   const fs = await import("node:fs");
-  const html = fs.readFileSync(new URL("../../frontend/public/taskpane.html", import.meta.url), "utf8");
+  const html = fs.readFileSync(new URL("../../../frontend/public/taskpane.html", import.meta.url), "utf8");
   assert.match(html, /FORMULR\.ANSWER\(B2\)/);
 });
 
@@ -825,8 +765,8 @@ test("a question pasted as many rows works as a range, and blank rows around it 
   await withFetch(
     () => reply({ answer: "x" }),
     async (calls) => {
-      await AI.functions.short(pasted);
-      await AI.functions.short(pasted.slice(0, 8));
+      await AI.functions.one(pasted);
+      await AI.functions.one(pasted.slice(0, 8));
       assert.equal(calls.length, 1, "the same question with more or fewer blank rows below it is the same question");
     },
   );
@@ -881,10 +821,10 @@ test("a finished answer is reused after the in memory cache is gone, without cal
   await withFetch(
     () => (n++, reply({ answer: "B. 4.10%", explanation: "ok" })),
     async () => {
-      const first = await AI.functions.answer([["q"]], "");
+      const first = await AI.functions.one([["q"]], "");
       AI._cache.clear();
       AI._saved.reload();
-      const second = await AI.functions.answer([["q"]], "");
+      const second = await AI.functions.one([["q"]], "");
       assert.deepEqual(second, first);
     }
   );
@@ -898,20 +838,20 @@ test("errors are never saved and old or other version entries are ignored", asyn
   await withFetch(
     () => reply({ error: "nope" }, 400),
     async () => {
-      await AI.functions.answer([["bad"]], "");
+      await AI.functions.one([["bad"]], "");
     }
   ).catch(() => {});
   assert.ok(!store.getItem(AI._saved.key) || !Object.keys(JSON.parse(store.getItem(AI._saved.key))).length);
   const key = AI.util.cacheKey(["answer", "old", ""]);
-  store._m.set(AI._saved.key, JSON.stringify({ [key]: { t: Date.now() - AI._saved.ttl - 1000, v: [["stale", "x"]] } }));
+  store._m.set(AI._saved.key, JSON.stringify({ [key]: { t: Date.now() - AI._saved.ttl - 1000, v: "stale" } }));
   AI._saved.reload();
   AI._cache.clear();
   let n = 0;
   await withFetch(
     () => (n++, reply({ answer: "fresh", explanation: "e" })),
     async () => {
-      const out = await AI.functions.answer([["old"]], "");
-      assert.equal(out[0][0], "fresh");
+      const out = await AI.functions.one([["old"]], "");
+      assert.equal(out, "fresh");
     }
   );
   assert.equal(n, 1);
@@ -927,8 +867,8 @@ test("saved answers are pruned and storage failures do not break answers", async
   await withFetch(
     () => reply({ answer: "ok", explanation: "e" }),
     async () => {
-      const out = await AI.functions.answer([["q2"]], "");
-      assert.equal(out[0][0], "ok");
+      const out = await AI.functions.one([["q2"]], "");
+      assert.equal(out, "ok");
     }
   );
   fakeSavedStorage();

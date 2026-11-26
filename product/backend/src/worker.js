@@ -21,6 +21,7 @@ import { TOOLS, runTool } from "./calc.js";
 import { renderManifest } from "./manifest.js";
 
 const PROVIDER_TIMEOUT_MS = 65_000;
+const SITE = "https://formulr.dev";
 const fallbackLimiter = memoryLimiter();
 
 const json = (status, body, extra = {}) =>
@@ -263,7 +264,6 @@ async function handleAi(request, env, url) {
   const creds = own ?? (role === "owner" ? serverCredentials(env) : null);
   if (!creds) throw new HttpError(403, "needs_key", "Add your own AI key in the Formulr pane to get answers.");
   const t0 = Date.now();
-  const payload = validatePayload(await readJsonLimited(request, LIMITS.maxBodyBytes));
   const limiter = limiterFor(env);
   const now = new Date();
   const minute = Math.floor(now.getTime() / 60000);
@@ -291,6 +291,8 @@ async function handleAi(request, env, url) {
     );
   }
   if ((await Promise.all(checks)).some((r) => !r.ok)) throw new HttpError(429, "quota", "Usage limit reached. Try again later.");
+  // Read the body only after the limits pass, so a caller over the limit cannot make the Worker read 8 MB first.
+  const payload = validatePayload(await readJsonLimited(request, LIMITS.maxBodyBytes));
   const t1 = Date.now();
   const call = creds.provider === "anthropic" ? callAnthropic : callGemini;
   let result = await call(env, payload, creds);
@@ -329,12 +331,9 @@ export default {
           headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" },
         });
       }
-      // The home page. Assets use html_handling "none", so "/" is mapped to index.html here.
-      if (url.pathname === "/" && request.method === "GET" && env.ASSETS) {
-        return env.ASSETS.fetch(new Request(new URL("/index.html", url.origin), request));
-      }
-      if ((url.pathname === "/install" || url.pathname === "/install/") && request.method === "GET" && env.ASSETS) {
-        return env.ASSETS.fetch(new Request(new URL("/install.html", url.origin), request));
+      // The website (home page and install guide) lives on formulr.dev; this Worker is the product at app.formulr.dev.
+      if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/install" || url.pathname === "/install/")) {
+        return Response.redirect(url.pathname === "/" ? SITE : SITE + "/install", 302);
       }
       if (url.pathname === "/api/session") return await handleSession(request, env, url);
       if (url.pathname === "/api/ai") return await handleAi(request, env, url);

@@ -23,8 +23,7 @@ A work branch is merged into `sandbox`, tested, and then deleted. Nothing is mer
 6. Publishing to the website or to Fly is a separate step. It happens only from `main`, and only after the owner types "deploy" in the chat of the dev doing it.
 
 ## Running it (the sandbox test)
-- Backend first: `npm run dev` in `backend/`.
-- Then the front end: `npm run dev` in `frontend/`.
+- `npm run dev` in `product/backend/` serves both the add-in and the API.
 - Open the page, run the product through it, then run `npm test`.
 - Every project must use the same three scripts: `dev`, `test`, `deploy`.
 
@@ -40,7 +39,7 @@ A work branch is merged into `sandbox`, tested, and then deleted. Nothing is mer
 GitHub's own branch protection and secret scanning need a paid plan for private repos (not confirmed for this account), so these local hooks are the free version. They only protect machines that have them turned on.
 
 ## Folders inside the repo
-See README.md: frontend/, backend/, docs/.
+See README.md: product/frontend/, product/backend/, docs/.
 
 ## Databases
 - The repo holds the schema, never live data. Never commit *.sqlite, *.db or backups.

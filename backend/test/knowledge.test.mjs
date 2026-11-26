@@ -30,8 +30,8 @@ test("packs are added after the stable prompt, cached, only for questions, and p
   assert.match(body.system[2].text, /Take your time/);
   const none = buildAnthropicBody({ mode: "answer", input: "Translate hello" }, "claude-sonnet-5-5", [BONDS]);
   assert.equal(none.system.length, 1, "no matching pack, no extra block");
-  const extract = buildAnthropicBody({ mode: "extract", input: "bond data", fields: ["a"] }, "claude-sonnet-5-5", [BONDS, ALWAYS]);
-  assert.equal(extract.system.length, 1, "mechanical jobs stay lean");
+  const picture = buildAnthropicBody({ mode: "image", instruction: "bond table", image: { mime: "image/png", data: "x" } }, "claude-sonnet-5-5", [BONDS, ALWAYS]);
+  assert.equal(picture.system.length, 1, "mechanical jobs stay lean");
   assert.equal(buildAnthropicBody({ mode: "answer", input: "bond" }, "claude-sonnet-5-5", []).system.length, 1, "works with no packs at all");
 });
 

@@ -1,6 +1,6 @@
 # Formulr
 
-AI answers inside your Excel formulas, on **your own** AI key. Live site: **https://excel-ai-helper.comprsly-antonio.workers.dev**
+AI answers inside your Excel formulas, on **your own** AI key. Live site: **https://formulr.dev**
 
 Paste a question into B2, type `=FORMULR.ANSWER(B2)` in C2, and the answer fills C2 with a one line explanation in D2.
 
@@ -14,10 +14,10 @@ Paste a question into B2, type `=FORMULR.ANSWER(B2)` in C2, and the answer fills
 | Google Gemini | Yes, has a free tier with lower limits | https://aistudio.google.com/apikey |
 | OpenAI and others | Not yet | |
 
-The site has a guided **Get your AI key** box that checks your key works before you use it: https://excel-ai-helper.comprsly-antonio.workers.dev/#get-key
+The site has a guided **Get your AI key** box that checks your key works before you use it: https://formulr.dev/#get-key
 
 ## Get Formulr
-**Install page: https://excel-ai-helper.comprsly-antonio.workers.dev/install**
+**Install page: https://formulr.dev/install**
 
 1. Open the install page and press **Download the add-in**. You get `formulr-manifest.xml`, a small file that tells Excel where Formulr lives.
 2. In Excel open any workbook, then go to Insert, Add-ins, More Add-ins, My Add-ins, Manage My Add-ins, Upload My Add-in, and choose that file.

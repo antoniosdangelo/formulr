@@ -9,5 +9,5 @@ Thanks for helping. Small, focused pull requests are easiest to review.
 
 Ground rules
 - Never commit keys, access codes, Worker addresses, database ids or personal notes. Your own knowledge packs belong in `knowledge/` and are ignored by git.
-- Keep the add-in working without any build step. The files in `frontend/public/` are served exactly as written.
-- If you change what the model is asked to do (`backend/src/core.js`), include a test that shows the request that will be sent.
+- Keep the add-in working without any build step. The files in `product/frontend/` are served exactly as written.
+- If you change what the model is asked to do (`product/backend/src/core.js`), include a test that shows the request that will be sent.

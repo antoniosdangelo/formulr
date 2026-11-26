@@ -447,12 +447,6 @@
     return safeSlice(s, MAX_CELL);
   }
 
-  function normalizeFields(fields) {
-    const flat = [].concat(...(Array.isArray(fields) ? fields : [[fields]])).map((f) => String(f === null || f === undefined ? "" : f).trim());
-    const names = flat.length === 1 ? flat[0].split(/[,;]/).map((f) => f.trim()) : flat;
-    return names.filter((f) => f.length > 0);
-  }
-
   function findPictureForCell(cell, shapes) {
     const tol = 1.5;
     const images = shapes.filter((s) => s.type === "Image");
@@ -523,57 +517,11 @@
     return out.answer;
   }
 
-  /**
-   * Pulls named fields out of text and spills them across one row.
-   * @customfunction EXTRACT
-   * @param {any[][]} input The text to read: a cell, a range, or pasted text of any length.
-   * @param {any[][]} fields Field names, as a range like D1:F1 or text like "name, date, amount".
-   * @returns {string[][]} One row with a value for each field.
-   */
-  async function extract(input, fields) {
-    const inp = text(input);
-    const names = normalizeFields(fields);
-    if (!inp.trim()) throw fnError("invalidValue", "The input text is empty");
-    if (names.length === 0) throw fnError("invalidValue", 'List the fields to pull out, for example D1:F1 or "name, date, amount"');
-    const out = await cached(["extract", inp, names], () => callApi({ mode: "extract", input: inp, fields: names }));
-    return [out.values];
-  }
-
   restore();
 
   /**
-   * Answers what the text asks and explains briefly, spilling the answer and the explanation into two cells.
+   * Answers what the text asks, in one cell: just the answer, no explanation. Registered as FORMULR.ANSWER.
    * @customfunction ANSWER
-   * @param {any[][]} input The text to respond to: a cell, a range, or pasted text of any length.
-   * @param {string} [instruction] Optional extra instruction, for example "in Spanish".
-   * @returns {string[][]} One row: the answer, then a short explanation.
-   */
-  async function answer(input, instruction) {
-    const inp = text(input);
-    if (!inp.trim()) throw fnError("invalidValue", "The input text is empty");
-    const ins = text(instruction);
-    const out = await cached(["answer", inp, ins], () => callApi({ mode: "answer", input: inp, instruction: ins }));
-    return [[out.answer, out.explanation]];
-  }
-
-  /**
-   * Like ANSWER, but slower and more accurate: it reasons first and checks its own arithmetic. Use it for maths, finance and exam questions.
-   * @customfunction CAREFUL
-   * @param {any[][]} input The text to respond to: a cell, a range, or pasted text of any length.
-   * @param {string} [instruction] Optional extra instruction, for example "in Spanish".
-   * @returns {string[][]} One row: the answer, then a short explanation.
-   */
-  async function careful(input, instruction) {
-    const inp = text(input);
-    if (!inp.trim()) throw fnError("invalidValue", "The input text is empty");
-    const ins = text(instruction);
-    const out = await cached(["careful", inp, ins], () => callApi({ mode: "answer", input: inp, instruction: ins, careful: true }));
-    return [[out.answer, out.explanation]];
-  }
-
-  /**
-   * Just the answer, in one cell: no explanation. The tidiest and quickest formula.
-   * @customfunction SHORT
    * @param {any[][]} input The text to respond to: a cell, a range, or pasted text of any length.
    * @param {string} [instruction] Optional extra instruction, for example "in Spanish".
    * @returns {string} The answer only.
@@ -586,15 +534,6 @@
     const out = await cached(["answer", inp, ins], () => callApi({ mode: "answer", input: inp, instruction: ins }));
     return out.answer; // the model also writes a one line reason, which is only used to catch an answer that argues with itself
   }
-  async function short(input, instruction) {
-    const inp = text(input);
-    if (!inp.trim()) throw fnError("invalidValue", "The input text is empty");
-    const extra = text(instruction).trim();
-    const ins = "Reply with only the final answer, as briefly as possible, with no explanation." + (extra ? " " + extra : "");
-    const out = await cached(["short", inp, extra], () => callApi({ mode: "ask", instruction: ins, input: inp }));
-    return out.answer;
-  }
-
   // Excel's CustomFunctions object can appear slightly after this script runs, so keep trying for a few seconds.
   function associateNow() {
     if (state.associated) return true;
@@ -627,8 +566,8 @@
   state.restore = restore;
   state.associateNow = associateNow;
   state.LOCKED = LOCKED;
-  state.util = { safeSlice: safeSlice, toText: toText, fingerprint: fingerprint, cacheKey: cacheKey, escapeCell: escapeCell, normalizeFields: normalizeFields, findPictureForCell: findPictureForCell, planWrite: planWrite };
-  state.functions = { ask: ask, extract: extract, answer: answer, careful: careful, short: short, one: one };
+  state.util = { safeSlice: safeSlice, toText: toText, fingerprint: fingerprint, cacheKey: cacheKey, escapeCell: escapeCell, findPictureForCell: findPictureForCell, planWrite: planWrite };
+  state.functions = { ask: ask, one: one };
   state._cache = cache;
   state.clearSaved = clearSaved;
   state._saved = { key: SAVED_KEY, ttl: SAVED_TTL_MS, max: SAVED_MAX, reload: () => (saved = null) };

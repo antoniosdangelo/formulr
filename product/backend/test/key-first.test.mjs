@@ -5,7 +5,7 @@ import fs from "node:fs";
 
 const read = (rel) => fs.readFileSync(new URL(rel, import.meta.url), "utf8");
 const readme = read("../../../README.md");
-const pane = read("../../../frontend/public/taskpane.html");
+const pane = read("../../frontend/taskpane.html");
 
 test("README leads with the install page and your own key, and self hosting is the advanced path", () => {
   const get = readme.indexOf("## Get Formulr");
@@ -25,4 +25,13 @@ test("the side bar shows the key box first", () => {
   const code = pane.indexOf('id="code"');
   assert.ok(key > 0 && key < code, "key box comes before the access code");
   assert.match(pane, /never uses anyone else's key/);
+});
+
+test("the add-in pane checks a key before saving it and links to the website guide", () => {
+  assert.match(pane, /How do I get a key\?/);
+  assert.match(pane, /href="https:\/\/formulr\.dev\/#get-key"/);
+  assert.match(read("../../frontend/app.js"), /AI\.checkKey\(/);
+  const fn = read("../../frontend/functions.js");
+  assert.doesNotMatch(fn, /\/api\/key-check/, "the pane checks keys with the provider directly");
+  assert.match(fn, /anthropic-dangerous-direct-browser-access/);
 });

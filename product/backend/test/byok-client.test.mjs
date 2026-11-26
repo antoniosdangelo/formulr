@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-await import("../../../frontend/public/functions.js");
+await import("../../frontend/functions.js");
 const AI = globalThis.AIHelper;
 AI.base = "https://helper.test";
 AI.retryDelaysMs = [];

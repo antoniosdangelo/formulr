@@ -1,8 +1,8 @@
 # Formulr
 
-AI answers inside your Excel formulas, on **your own** AI key. Live site: **https://excel-ai-helper.comprsly-antonio.workers.dev**
+AI answers inside your Excel formulas, on **your own** AI key. Website: **https://formulr.dev**. The add-in and its API run at https://app.formulr.dev.
 
-Paste a question into B2, type `=FORMULR.ANSWER(B2)` in C2, and the answer fills C2 with a one line explanation in D2.
+Paste a question into B2, type `=FORMULR.ANSWER(B2)` in C2, and the answer fills C2.
 
 ## What you need
 - **Excel on the web** (free with any Microsoft account), or **Microsoft 365 Excel** on Windows or Mac. Older boxed versions such as Excel 2016 and 2019 do not run this kind of add-in. Desktop and Mac are less tested than the web.
@@ -14,26 +14,28 @@ Paste a question into B2, type `=FORMULR.ANSWER(B2)` in C2, and the answer fills
 | Google Gemini | Yes, has a free tier with lower limits | https://aistudio.google.com/apikey |
 | OpenAI and others | Not yet | |
 
-The site has a guided **Get your AI key** box that checks your key works before you use it: https://excel-ai-helper.comprsly-antonio.workers.dev/#get-key
+The site has a guided **Get your AI key** box that checks your key works before you use it: https://formulr.dev/#get-key
 
 ## Get Formulr
-**Install page: https://excel-ai-helper.comprsly-antonio.workers.dev/install**
+**Install page: https://formulr.dev/install**
 
 1. Open the install page and press **Download the add-in**. You get `formulr-manifest.xml`, a small file that tells Excel where Formulr lives.
 2. In Excel open any workbook, then go to Insert, Add-ins, More Add-ins, My Add-ins, Manage My Add-ins, Upload My Add-in, and choose that file.
 3. Click **Formulr** on the Home tab. No sign up and no access code are needed.
 4. Under **Your AI key**, pick Anthropic or Gemini, paste **your own** key and press **Save key**. Formulr checks it with your provider before saving it.
 
+Installed Formulr before it moved to app.formulr.dev? Download the add-in file again from the install page and paste your key once more, since each address keeps its own saved key.
+
 Nothing to install on your laptop, and no GitHub or Cloudflare account.
 
 ## First use
 1. Type or paste a question into **B2**.
 2. In **C2** type `=FORMULR.ANSWER(B2)` and press Enter.
-3. The answer appears in C2 and a short explanation in D2. Keep D2 empty so it has room.
+3. The answer appears in C2, just the answer, in one cell.
 
 | Formula | What it does |
 |---|---|
-| `=FORMULR.ANSWER(B2)` | The answer in one cell and a short explanation in the next. For multiple choice the answer is the option letter, and it always commits to one option. Takes a cell, a whole range, or text of any length. Add a second argument for an instruction, like `=FORMULR.ANSWER(B2, "in Spanish")`. |
+| `=FORMULR.ANSWER(B2)` | The answer, in one cell. For multiple choice the answer is the option letter, and it always commits to one option. Takes a cell, a whole range, or text of any length. Add a second argument for an instruction, like `=FORMULR.ANSWER(B2, "in Spanish")`. |
 
 `FORMULR.ANSWER` is the only function. The side bar can also answer selected cells without a formula and read a floating picture (click it, then press **Answer picture**). **Tidy** and **Expand** on the Home tab keep long question cells to one line and bring the full text back. They change only how cells look.
 
@@ -59,7 +61,7 @@ Only if you want your own server instead of the hosted one. You need a free [Clo
 
 **The owner code.** A key saved on the Worker itself can be used only with a pass from the `OWNER_CODE` secret, which only the person running that copy holds. Set it with `npx wrangler secret put OWNER_CODE` (12 or more characters, different from the access code). Guests have limits per key and per address (`GUEST_PER_MINUTE`, `GUEST_PER_DAY`, default 30 and 1500).
 
-Full guide and settings: [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md). Private reference material for prompts: [backend/knowledge/README.md](backend/knowledge/README.md).
+Full guide and settings: [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md). Private reference material for prompts: [product/backend/knowledge/README.md](product/backend/knowledge/README.md).
 
 ## Troubleshooting
 | What you see | Fix |
@@ -67,7 +69,6 @@ Full guide and settings: [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md). Private ref
 | `#NAME?` | Wait a minute and reload the workbook. If it stays, remove older Formulr entries in Manage My Add-ins and upload the file again. |
 | "Add your own AI key" | Click Formulr on the Home tab and save your key. |
 | `#N/A` about the AI provider | Wrong key, no credit, or a retired model. Check the key and your credit with the provider. |
-| `#SPILL!` | The cell to the right is not empty. Clear it. |
 | "Usage limit reached" | Wait a minute and try again. |
 | Formulr is missing on another laptop | An uploaded add-in is remembered per browser. Upload the file again there. |
 
@@ -80,11 +81,21 @@ In the side bar, **Run checks** shows what your Excel supports. **Copy** gives a
 - Models can be wrong, especially on long calculations. Check anything that matters.
 
 ## Development
+This repo is the product only. The marketing site at formulr.dev lives in a separate private repo.
+
 ```
-cd backend && npm test          # Worker and add-in tests, Node.js 22 or newer
-cd frontend/web && npm run build # rebuild the website into frontend/public
+product/
+  frontend/   the Excel add-in: side pane, the FORMULR.ANSWER formula, self-test (plain HTML, CSS and JavaScript with Office.js, no build step)
+  backend/    the API: one Cloudflare Worker in plain JavaScript (D1 for usage counters), setup scripts and all tests
+docs/         how to install, use and self host
 ```
-`frontend/public/` holds the add-in and the built site, `frontend/web/` the site source and the onboarding video, `backend/src/` the Worker. New work goes to `sandbox` first, see [BRANCHING.md](BRANCHING.md). Every update is in `CHANGELOG.md`.
+
+```
+cd product/backend && npm test      # Node.js 22 or newer
+cd product/backend && npm run dev   # serves the add-in and the API on http://localhost:8793
+```
+
+The product runs at https://app.formulr.dev. New work goes to `sandbox` first, see [BRANCHING.md](BRANCHING.md). Every update is in `CHANGELOG.md`.
 
 ## License
 MIT. See [LICENSE](LICENSE). Not affiliated with or endorsed by Microsoft, Anthropic, Google or Cloudflare. Excel is a trademark of Microsoft.

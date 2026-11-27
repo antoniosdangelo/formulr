@@ -1,13 +1,21 @@
 # Contributing
 
-Thanks for helping. Small, focused pull requests are easiest to review.
+Small, focused pull requests are easiest to review.
 
+## Build and test
+You need Node.js 22 or newer. There are no packages to install.
+
+```
+cd product/backend
+npm test       # runs every test
+npm run dev    # serves the add-in and the API on http://localhost:8793
+```
+
+The add-in in `product/frontend/` has no build step. Its files are served exactly as written.
+
+## Open a pull request
 1. Fork the repository and create a branch.
-2. Run the tests: `npm test` (Node.js 22 or newer; no packages to install).
-3. Add or update tests for what you change. The suite checks the Worker, the add-in logic against a fake Excel, the manifest and the setup script.
-4. Open a pull request that says what changed and why.
+2. Add or update tests for what you change.
+3. Open a pull request with a short summary of what changed for users and how you tested it.
 
-Ground rules
-- Never commit keys, access codes, Worker addresses, database ids or personal notes. Your own knowledge packs belong in `knowledge/` and are ignored by git.
-- Keep the add-in working without any build step. The files in `product/frontend/` are served exactly as written.
-- If you change what the model is asked to do (`product/backend/src/core.js`), include a test that shows the request that will be sent.
+Never commit keys, codes, Worker addresses, database ids or personal notes. Your own knowledge packs in `product/backend/knowledge/` are ignored by git.

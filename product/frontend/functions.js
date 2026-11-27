@@ -9,7 +9,7 @@
   state.token = state.token || null;
   state.expiresAt = state.expiresAt || 0;
 
-  const LOCKED = "Formulr is locked. Click Formulr on the Home tab and enter your access code.";
+  const LOCKED = "Formulr is locked. Click Formulr on the Home tab and enter your owner code.";
   const NEEDS_KEY = "Add your own AI key: click Formulr on the Home tab, pick your provider and paste your key.";
   const MAX_CACHE = 500;
   const MAX_CELL = 32000; // Excel holds 32,767 characters per cell

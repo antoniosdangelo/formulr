@@ -618,7 +618,11 @@
   }
 
   // Where a second laptop gets the add-in. Uses the clipboard when the host allows it, and a hidden text box otherwise.
-  const installLink = () => "https://formulr.dev/install"; // the install guide lives on the website
+  // The hosted copy's install guide lives on the website; a self hosted copy hands out its own add-in file.
+  const installLink = () => {
+    const origin = root.location && root.location.origin;
+    return !origin || origin === "https://app.formulr.dev" ? "https://formulr.dev/install" : origin + "/download";
+  };
 
   async function copyText(text) {
     try {
@@ -679,7 +683,7 @@
     $("lock").addEventListener("click", () => {
       AI.lock();
       updateLockUi();
-      setStatus("Locked. This device no longer remembers the access code.", "");
+      setStatus("Locked. This device no longer remembers the owner code.", "");
     });
     $("run-checks").addEventListener("click", () => onDiagnostics(false));
     $("test-ai").addEventListener("click", () => onDiagnostics(true));

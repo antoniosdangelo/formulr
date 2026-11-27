@@ -10,7 +10,7 @@ export function generateAccessCode(randomBytes) {
   return [0, 4, 8, 12, 16].map((i) => chars.slice(i, i + 4).join("")).join("-");
 }
 
-const D1_BLOCK = /(\/\/ BEGIN D1[^\n]*\n)([\s\S]*?)(\n\s*\/\/ END D1)/;
+const D1_BLOCK = /(\/\/ BEGIN D1[^\n]*\n)([\s\S]*?)(\r?\n\s*\/\/ END D1)/;
 
 export function readD1Id(config) {
   const m = config.match(D1_BLOCK);
@@ -20,7 +20,8 @@ export function readD1Id(config) {
 
 export function patchD1Block(config, id) {
   if (!D1_BLOCK.test(config)) throw new Error("wrangler.jsonc is missing the BEGIN D1 / END D1 markers");
-  const block = `  "d1_databases": [\n    { "binding": "QUOTAS_DB", "database_name": "${DB_NAME}", "database_id": "${id}" }\n  ]`;
+  const nl = config.includes("\r\n") ? "\r\n" : "\n"; // keep the file's own line endings (Windows checkouts use CRLF)
+  const block = `  "d1_databases": [${nl}    { "binding": "QUOTAS_DB", "database_name": "${DB_NAME}", "database_id": "${id}" }${nl}  ]`;
   return config.replace(D1_BLOCK, (_, begin, _old, end) => `${begin}${block}${end}`);
 }
 

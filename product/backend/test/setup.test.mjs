@@ -30,6 +30,10 @@ test("the D1 block can be read and rewritten without touching the rest of the co
   assert.equal(readD1Id(patched), UUID_B);
   assert.ok(patched.includes('"name": "excel-ai-helper"') && patched.includes('"html_handling": "none"') && patched.includes("// END D1"));
   assert.equal(patchD1Block(patched, UUID_A), CONFIG, "round trip is exact");
+  for (const nl of ["\n", "\r\n"]) {
+    const cfg = CONFIG.replace(/\r?\n/g, nl);
+    assert.equal(patchD1Block(patchD1Block(cfg, UUID_B), UUID_A), cfg, "round trip keeps " + JSON.stringify(nl) + " line endings");
+  }
   assert.throws(() => patchD1Block("{}", UUID_B), /markers/);
 });
 

@@ -57,7 +57,7 @@ Only if you want your own server instead of the hosted one. You need a free [Clo
 
 1. Download this project and unzip it.
 2. Double click `setup.cmd` on Windows, or run `./setup.sh` on Mac or Linux. It signs you in to Cloudflare, deploys your own Worker and prints your address.
-3. Share `YOUR-ADDRESS/install` with your users.
+3. Share `YOUR-ADDRESS/download` with your users. It downloads the add-in file that points at your copy. (`YOUR-ADDRESS/install` now opens the formulr.dev install page, which installs the hosted copy.)
 
 **The owner code.** A key saved on the Worker itself can be used only with a pass from the `OWNER_CODE` secret, which only the person running that copy holds. Set it with `npx wrangler secret put OWNER_CODE` (12 or more characters, different from the access code). Guests have limits per key and per address (`GUEST_PER_MINUTE`, `GUEST_PER_DAY`, default 30 and 1500).
 

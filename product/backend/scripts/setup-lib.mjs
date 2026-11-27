@@ -10,7 +10,7 @@ export function generateAccessCode(randomBytes) {
   return [0, 4, 8, 12, 16].map((i) => chars.slice(i, i + 4).join("")).join("-");
 }
 
-const D1_BLOCK = /(\/\/ BEGIN D1[^\n]*\n)([\s\S]*?)(\n\s*\/\/ END D1)/;
+const D1_BLOCK = /(\/\/ BEGIN D1[^\n]*\n)([\s\S]*?)(\r?\n\s*\/\/ END D1)/;
 
 export function readD1Id(config) {
   const m = config.match(D1_BLOCK);

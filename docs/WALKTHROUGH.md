@@ -50,8 +50,8 @@ You will see six steps:
 It is safe to run the setup again at any time. It reuses what it already created.
 
 ## Step 4. Add it to Excel
-1. Open `YOUR-ADDRESS/install` in your browser. It has a **Download** button and the same steps below.
-2. Click **Download** to save `formulr-manifest.xml`.
+1. Open `YOUR-ADDRESS/download` in your browser.
+2. It saves `formulr-manifest.xml`, which points at your copy.
 3. Open Excel (web or desktop) and open any workbook.
 4. Go to **Insert**, then **Add-ins**, then **More Add-ins**, then **My Add-ins**, then **Manage My Add-ins**, then **Upload My Add-in**. Choose the file.
 5. On the **Home** tab click **Formulr**. Enter your access code once. Leave "Remember on this device" ticked.
@@ -75,7 +75,7 @@ Good habits
 - When you are done with a sheet, copy the results and paste them as values. Otherwise Excel asks the AI again every time the workbook recalculates.
 
 ## Using it on another laptop
-Uploading an add-in is remembered per browser. On a new laptop or browser, open `YOUR-ADDRESS/install` and repeat Step 4. You do not need to run the setup again. The service keeps running on Cloudflare whether or not your own computer is on.
+Uploading an add-in is remembered per browser. On a new laptop or browser, open `YOUR-ADDRESS/download` and repeat Step 4. You do not need to run the setup again. The service keeps running on Cloudflare whether or not your own computer is on.
 
 ## Letting friends use it
 Best: each person deploys their own copy with this guide. That way each pays for their own usage.

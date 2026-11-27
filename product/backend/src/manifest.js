@@ -131,8 +131,8 @@ export function renderManifest(origin, addInId = ADD_IN_ID) {
         <bt:String id="AskPictureButton.Label" DefaultValue="Answer picture"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Open Formulr on the Home tab and enter your access code, then type =FORMULR.ANSWER(B2) in any cell."/>
-        <bt:String id="PaneButton.Tooltip" DefaultValue="Open the Formulr pane to unlock it with your access code."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Click Formulr on the Home tab and paste your own AI key, then type =FORMULR.ANSWER(B2) in any cell."/>
+        <bt:String id="PaneButton.Tooltip" DefaultValue="Open the Formulr pane to add your own AI key and run checks."/>
         <bt:String id="AskPictureButton.Tooltip" DefaultValue="Click a picture and press this, or press this and then click the picture within 20 seconds. The answer appears in the cell just right of the picture."/>
       </bt:LongStrings>
     </Resources>

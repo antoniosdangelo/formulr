@@ -685,7 +685,10 @@ test("the side bar offers the install file and a copy link button that really co
   try {
     assert.equal(await AI.app.copyText("https://x.test/install"), true);
     assert.deepEqual(copied, ["https://x.test/install"]);
-    assert.match(AI.app.installLink(), /\/install$/);
+    assert.equal(AI.app.installLink(), "https://formulr.dev/install");
+    Object.defineProperty(globalThis, "location", { value: { origin: "https://my-copy.example.workers.dev" }, configurable: true });
+    assert.equal(AI.app.installLink(), "https://my-copy.example.workers.dev/download");
+    delete globalThis.location;
   } finally {
     delete globalThis.navigator;
   }

@@ -3,7 +3,7 @@
 This guide assumes you have never deployed anything. It takes about 15 minutes the first time.
 
 ## The idea in one minute
-Formulr is software you run yourself. Nobody hosts it for you, and there is no shared account or shared AI key.
+This guide is for running your own copy of Formulr. To just use it, install it from https://formulr.dev/install instead. Either way there is no shared AI key: everyone uses their own.
 
 ```
 You type  =FORMULR.ANSWER(B2)  in Excel
@@ -43,7 +43,7 @@ You will see six steps:
 1. **Log in to Cloudflare.** A browser window opens. Approve it.
 2. **Usage database.** It creates a tiny database that counts calls so you can cap them.
 3. **Deploy.** It uploads the Worker and the add-in files.
-4. **Secrets.** It asks for your AI key. Paste it (nothing shows on screen as you paste) and press Enter. It also creates a strong **access code** and shows it **once**. Write it down. This is the password for opening Formulr in Excel.
+4. **Secrets.** It asks for your AI key and stores it as a Cloudflare secret on your Worker. Paste it (nothing shows on screen as you paste) and press Enter. It also creates an access code and shows it once. People who use their own AI key do not need it.
 5. **Check.** It tests the live service.
 6. **Next steps.** It prints your address.
 
@@ -54,7 +54,7 @@ It is safe to run the setup again at any time. It reuses what it already created
 2. It saves `formulr-manifest.xml`, which points at your copy.
 3. Open Excel (web or desktop) and open any workbook.
 4. Go to **Insert**, then **Add-ins**, then **More Add-ins**, then **My Add-ins**, then **Manage My Add-ins**, then **Upload My Add-in**. Choose the file.
-5. On the **Home** tab click **Formulr**. Enter your access code once. Leave "Remember on this device" ticked.
+5. On the **Home** tab click **Formulr**. Under **Your AI key**, pick your provider, paste your key and press **Save key**. Formulr checks it with your provider first.
 
 ## Step 5. Your first formula
 Type a question in B2. For example: `If a shirt costs $40 and is 25% off, what is the sale price?`
@@ -78,14 +78,13 @@ Good habits
 Uploading an add-in is remembered per browser. On a new laptop or browser, open `YOUR-ADDRESS/download` and repeat Step 4. You do not need to run the setup again. The service keeps running on Cloudflare whether or not your own computer is on.
 
 ## Letting friends use it
-Best: each person deploys their own copy with this guide. That way each pays for their own usage.
-Alternatively you can share your address and access code with someone you trust. They will spend your AI credit, so keep the daily limit low and rotate the code afterwards.
+Share `YOUR-ADDRESS/download`. Each person pastes their own AI key in the side bar, so each pays for their own answers. Your usage limits apply per key and per address.
 
 ## Changing things later
 | I want to | Do this |
 |---|---|
 | Update after changing something | Run the setup again |
-| Get a new access code (signs out every device) | `setup --rotate-code` (Windows: `setup.cmd --rotate-code`) |
+| Use the key stored on your Worker for yourself | In `product/backend` run `npx wrangler secret put OWNER_CODE` (12 or more characters), then open **Owner sign in** in the side bar and enter it |
 | Use a different AI key | `setup --reset-key` |
 | Switch Claude model | Edit `ANTHROPIC_MODEL` in `product/backend/wrangler.jsonc` (lowercase name), then run the setup |
 | Limit spending further | Lower `AI_PER_DAY` in `product/backend/wrangler.jsonc`, then run the setup |
@@ -97,18 +96,18 @@ Alternatively you can share your address and access code with someone you trust.
 |---|---|---|
 | `#NAME?` | Excel has not registered the formulas yet | Wait a minute, reload the page. Still there: remove Formulr under Manage My Add-ins and upload the file again |
 | A red banner: "Office.js did not load" | Something is blocking Microsoft's script on this network or browser | Try another network or browser, turn off a VPN or ad blocker. Press **Run checks** in the side bar |
-| "Formulr is locked" | You are not unlocked on this device | Click **Formulr** on the Home tab and enter the access code |
+| "Add your own AI key" | No key is saved on this device | Click **Formulr** on the Home tab and save your key |
 | `#VALUE!` with "The AI declined this input" | The AI refused that text | Reword the question |
 | `#N/A` with a message about the AI provider | Wrong key, no credit, or a retired model | Check your key and credit. Run `setup --reset-key`. Check the model name |
 | "Usage limit reached" | You hit your own daily or per minute limit | Wait, or raise `AI_PER_DAY` / `AI_PER_MINUTE` and run the setup |
 | Setup stops with red text | Usually a login or a typo in the key | Read the message, fix, run the setup again. It is safe to repeat |
 
-In the side bar, **Run checks**, **Test the AI** and **Run full self-test** show what your Excel supports and whether everything works. Copy the report if you open an issue. It never contains your access code.
+In the side bar, **Run checks**, **Test the AI** and **Run full self-test** show what your Excel supports and whether everything works. Copy the report if you open an issue. It never contains your AI key.
 
 ## Questions
 **How much does it cost?** Light personal use should fit within Cloudflare's free plan (check their current limits). The AI provider charges per use, and your spending limit is the ceiling.
 **Where do my questions go?** To your Worker and then to your AI provider. They are not stored by the Worker, which only counts calls.
-**Is the access code safe?** Treat it like a password. Anyone who has it can use your AI credit. Rotate it if it leaks.
+**Is my AI key safe?** It is stored only in the add-in on your device. Each answer passes it to your Worker for that one call, and it is never saved or logged there.
 **Can I run it without Cloudflare?** Not as written. The Worker is built for Cloudflare Workers.
 
 ## Speed

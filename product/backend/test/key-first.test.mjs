@@ -7,16 +7,15 @@ const read = (rel) => fs.readFileSync(new URL(rel, import.meta.url), "utf8");
 const readme = read("../../../README.md");
 const pane = read("../../frontend/taskpane.html");
 
-test("README leads with the install page and your own key, and self hosting is the advanced path", () => {
-  const get = readme.indexOf("## Get Formulr");
-  const own = readme.indexOf("## Your own AI key, always");
-  const adv = readme.indexOf("## Advanced: run your own copy");
-  assert.ok(get > 0 && own > get && adv > own, "Get Formulr, then the key promise, then Advanced");
-  assert.match(readme.slice(get, own), /https:\/\/\S+\/install/, "the install page link is in Get Formulr");
-  assert.match(readme.slice(get, own), /your own\*\* key/i);
-  assert.ok(!readme.slice(0, adv).includes("setup.cmd"), "setup.cmd only appears under Advanced");
+test("README leads with the install page and your own key, and self hosting is under Build from source", () => {
+  const install = readme.indexOf("## Install");
+  const use = readme.indexOf("## Use");
+  const build = readme.indexOf("## Build from source");
+  assert.ok(install > 0 && use > install && build > use, "Install, then Use, then Build from source");
+  assert.match(readme.slice(install, use), /https:\/\/\S+\/install/, "the install page link is in Install");
+  assert.match(readme.slice(0, install), /your own\*\* AI key/i);
+  assert.ok(!readme.slice(0, build).includes("setup.cmd"), "self hosting only appears under Build from source");
   assert.match(readme, /never uses anyone else's AI key/);
-  assert.match(readme, /OWNER_CODE/);
   assert.equal(readme.match(/^\| `=FORMULR\.ANSWER\(B2\)`/gm).length, 1, "one ANSWER row in the formula table");
 });
 

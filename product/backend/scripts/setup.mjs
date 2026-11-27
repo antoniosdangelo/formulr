@@ -110,7 +110,7 @@ export async function runSetup(deps, flags = {}) {
     log(`  ${shownCode}\n`);
   }
   log("In Excel: Insert, Add-ins, More Add-ins, My Add-ins, Upload My Add-in, choose the downloaded manifest.");
-  log("Then click Formulr on the Home tab, enter the access code, and press Run full self-test.");
+  log("Then click Formulr on the Home tab, paste your own AI key under Your AI key, and press Run checks.");
   return { url, ok: smoke.code === 0, accessCode: shownCode };
 }
 
